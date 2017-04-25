@@ -1,41 +1,57 @@
-import com.sun.org.glassfish.gmbal.ManagedObject;
-
 import java.io.*;
 import java.util.*;
 
-/**
- * Created by bogdanfloris on 24/04/2017.
- */
 public class Main {
-    private String variant;
-    private int height;
-    private boolean rotations;
-    private int n; // number of rectangles
-    private Rectangle[] rectangles;
-    private static final String INFILE = "src/test2.in";
-    private static final String OUTFILE = "src/out.out";
+    /** CONSTANTS */
+    private static final String IN_STD_FILE = "src/tests/test2.in";         // standard stream input
+    private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
+    private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
+    /** INSTANCE VARIABLES */
+    private String      variant;                            // free or fixed
+    private int         height;                             // height of the enclosing rectangle
+    private boolean     rotations;                          // whether we can rotate rectangles or not
+    private int         n;                                  // the number of rectangles
+    private Rectangle[] rectangles;                         // array containing the rectangles
+
+    /**
+     * Main method that provides the final algorithm.
+     */
     public void solve() {
         readInput();
-        test();
+        debugOutput();
     }
 
+    /**
+     * Method through which the input is read in standard format
+     * (as specified in the Problem-Description document).
+     */
     private void readInput() {
+        // skip container height
         in.next();
         in.next();
+
+        // read variant ("free" or "fixed")
         variant = in.next();
         if (variant.equals("fixed")) {
             height = in.nextInt();
         }
 
+        // skip "rotations allowed"
         in.next();
         in.next();
+
+        // read version ("yes" or "no")
         rotations = (in.next().equals("no")) ? false : true;
 
+        // skip "number of rectangles:"
         in.next();
         in.next();
         in.next();
+
+        // read number of rectangles ("n")
         n = in.nextInt();
+
         rectangles = new Rectangle[n];
 
         for (int i = 0; i < n; i++) {
@@ -43,19 +59,24 @@ public class Main {
         }
     }
 
-    private void test() {
-        out.println(variant);
+    /**
+     * Method used for debugging the algorithm.
+     */
+    private void debugOutput() {
+        debug.println(variant);
         if (variant.equals("fixed")) {
-            out.println(height);
+            debug.println(height);
         }
-        out.println(rotations);
-        out.println(n);
+        debug.println(rotations);
+        debug.println(n);
         for (int i = 0; i < n; i++) {
-            out.println(rectangles[i]);
+            debug.println(rectangles[i]);
         }
-
     }
 
+    /**
+     * Main class that represents a rectangle.
+     */
     private class Rectangle {
          private int width;
          private int height;
@@ -78,22 +99,28 @@ public class Main {
          }
     }
 
+    /** ---------------------- */
+    /** START OF TEMPLATE CODE */
     private InputReader in;
     private PrintWriter out;
+    private PrintWriter debug;
 
     public void runIO() {
         in = new InputReader(System.in);
         out = new PrintWriter(System.out);
+        debug = new PrintWriter(System.out);
 
         solve();
 
         out.close();
+        debug.close();
     }
 
     public void run() {
         try {
-            in = new InputReader(new File(INFILE));
-            out = new PrintWriter(new File(OUTFILE));
+            in = new InputReader(new File(IN_STD_FILE));
+            out = new PrintWriter(new File(OUT_STD_FILE));
+            debug = new PrintWriter(new File(OUT_DEBUG_FILE));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -101,6 +128,7 @@ public class Main {
         solve();
 
         out.close();
+        debug.close();
     }
 
     private class InputReader {
@@ -145,6 +173,8 @@ public class Main {
             }
         }
     }
+    /** -------------------- */
+    /** END OF TEMPLATE CODE */
 
     public static void main(String[] args) {
         new Main().run();

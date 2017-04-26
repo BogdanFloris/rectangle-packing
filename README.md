@@ -4,3 +4,6 @@ Before committing for the first time, add a file named .gitignore and copy the c
 The implementation of the algorithm will only be done on this branch; if you want to try out your own algorithms and still use version control then make your own branch - you can merge everything with master later.
 
 Only push changes if you actually changed something and we all agreed upon it.
+
+## Current Implementation
+Backtracking: https://www.codeproject.com/Articles/210979/Fast-optimizing-rectangle-packing-algorithm-for-bu

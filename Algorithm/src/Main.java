@@ -19,6 +19,7 @@ public class Main {
      */
     public void solve() {
         readInput();
+
         debugOutput();
     }
 

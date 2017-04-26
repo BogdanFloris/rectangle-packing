@@ -3,7 +3,7 @@ import java.util.*;
 
 public class Main {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/test2.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -14,20 +14,15 @@ public class Main {
     private int         n;                                  // the number of rectangles
     private Rectangle[] rectangles;                         // array containing the rectangles
 
+    private InputReader in;                                 // the standard input stream of the program
+    private PrintWriter out;                                // the standard output stream of the program
+    private PrintWriter debug;                              // the standard error stream of the program
+
     /**
      * Main method that provides the final algorithm.
      */
     public void solve() {
-        readInput();
-
-        debugOutput();
-    }
-
-    /**
-     * Method through which the input is read in standard format
-     * (as specified in the Problem-Description document).
-     */
-    private void readInput() {
+        /** Read the Input */
         // skip container height
         in.next();
         in.next();
@@ -56,56 +51,42 @@ public class Main {
         rectangles = new Rectangle[n];
 
         for (int i = 0; i < n; i++) {
-            rectangles[i] = new Rectangle(in.nextInt(), in.nextInt());
+            rectangles[i] = new Rectangle(in.nextInt(), in.nextInt(), i);
         }
-    }
 
-    /**
-     * Method used for debugging the algorithm.
-     */
-    private void debugOutput() {
-        debug.println(variant);
+        /** Write the Output */
+        // write the initial part (identical with the input)
+        out.print("container height: " + variant);
         if (variant.equals("fixed")) {
-            debug.println(height);
+            out.print(height);
         }
-        debug.println(rotations);
-        debug.println(n);
-        for (int i = 0; i < n; i++) {
-            debug.println(rectangles[i]);
+        out.println();
+
+        out.println("rotations allowed: " + (rotations ? "yes" : "no"));
+
+        out.println("number of rectangles: " + n);
+
+        for (Rectangle rectangle : rectangles) {
+            out.println(rectangle);
+        }
+
+        // output the placement of the rectangles
+        out.println("placement of rectangles");
+
+        /** Solve the packing problem */
+        // solve the problem with a certain algorithm
+        Point[] result = Solver.simpleSolver(rectangles);
+
+        // output the position of each rectangle
+        for (Point point : result) {
+            out.println(point);
         }
     }
 
     /**
-     * Main class that represents a rectangle.
+     * Run the algorithm on the input received in the console.
+     * Output the result in the console.
      */
-    private class Rectangle {
-         private int width;
-         private int height;
-
-         public Rectangle(int width, int height) {
-             this.width = width;
-             this.height = height;
-         }
-
-         public int getWidth() {
-             return width;
-         }
-
-         public int getHeight() {
-             return height;
-         }
-         @Override
-         public String toString() {
-            return width + " " + height;
-         }
-    }
-
-    /** ---------------------- */
-    /** START OF TEMPLATE CODE */
-    private InputReader in;
-    private PrintWriter out;
-    private PrintWriter debug;
-
     public void runIO() {
         in = new InputReader(System.in);
         out = new PrintWriter(System.out);
@@ -117,6 +98,12 @@ public class Main {
         debug.close();
     }
 
+    /**
+     * Run the algorithm on the input received in the file {@code IN_STD_FILE}.
+     * Output the result in the file {@code OUT_STD_FILE}.
+     * One can also output the results in the file used for debugging,
+     * namely {@code OUT_DEBUG_FILE}.
+     */
     public void run() {
         try {
             in = new InputReader(new File(IN_STD_FILE));
@@ -126,56 +113,13 @@ public class Main {
             throw new RuntimeException(e);
         }
 
+        debug.println("test file: " + IN_STD_FILE);
+
         solve();
 
         out.close();
         debug.close();
     }
-
-    private class InputReader {
-        private BufferedReader reader;
-        private StringTokenizer tokenizer;
-
-        public InputReader(InputStream stream) {
-            reader = new BufferedReader(new InputStreamReader(stream));
-            tokenizer = null;
-        }
-
-        public InputReader(File f) {
-            try {
-                reader = new BufferedReader(new FileReader(f));
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            tokenizer = null;
-        }
-
-        public String next() {
-            while (tokenizer == null || !tokenizer.hasMoreTokens()) {
-                try {
-                    tokenizer = new StringTokenizer(reader.readLine());
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            return tokenizer.nextToken();
-        }
-
-        public int nextInt() {
-            return Integer.parseInt(next());
-        }
-
-        public String nextLine() {
-            tokenizer = null;
-            try {
-                return reader.readLine();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    /** -------------------- */
-    /** END OF TEMPLATE CODE */
 
     public static void main(String[] args) {
         new Main().run();

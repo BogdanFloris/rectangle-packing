@@ -6,4 +6,5 @@ The implementation of the algorithm will only be done on this branch; if you wan
 Only push changes if you actually changed something and we all agreed upon it.
 
 ## Current Implementation
-Backtracking: https://www.codeproject.com/Articles/210979/Fast-optimizing-rectangle-packing-algorithm-for-bu
+
+Simple Solver: just line them up horizontally from the rectangle with the biggest area to the rectangle with the smallest area.

@@ -1,0 +1,6 @@
+Algorithm/.idea/
+*.iml
+Algorithm/out/
+*.aux
+*.log
+*.out

@@ -12,6 +12,7 @@ public class PackingSolver {
     private boolean     rotations;                          // whether we can rotate rectangles or not
     private int         n;                                  // the number of rectangles
     private Rectangle[] rectangles;                         // array containing the rectangles
+    private Solver      solver;                             // the solver used in computing the result
 
     private InputReader in;                                 // the standard input stream of the program
     private PrintWriter out;                                // the standard output stream of the program
@@ -74,7 +75,8 @@ public class PackingSolver {
 
         /** Solve the packing problem */
         // solve the problem with a certain algorithm
-        Rectangle[] result = Solver.simpleSolver(rectangles);
+        solver = new SimpleSolver();
+        Rectangle[] result = solver.solver(rectangles);
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated

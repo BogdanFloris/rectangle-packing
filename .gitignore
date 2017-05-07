@@ -1,6 +1,9 @@
 Algorithm/.idea/
 Algorithm/*.iml
+GUI/.idea/
+GUI/*.iml
 *.iml
+*.iws
 Algorithm/out/
+GUI/out
 .idea
-

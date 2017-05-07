@@ -2,6 +2,7 @@ Algorithm/.idea/
 Algorithm/*.iml
 GUI/.idea/
 GUI/*.iml
+*.ipr
 *.iml
 *.iws
 Algorithm/out/

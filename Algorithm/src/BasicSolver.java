@@ -21,15 +21,27 @@ public class BasicSolver implements Solver {
             }
         });
 
-        // place each rectangle accordingly
+        // placement of the rectangles
         Rectangle[] placement = new Rectangle[rectangles.length];
 
         // initial height and width of the enclosing rectangle(container)
-        int containerHeight = rectangles[0].height;
-        int containerWidth = Integer.MAX_VALUE;
+        int containerHeight = rectangles[0].height; // we start of with the height of the tallest rectangle
+        // the width is the sum of all the widths
+        int containerWidth = 0;
+        for (int i = 0; i < rectangles.length; i++) {
+            containerWidth += rectangles[i].width;
+        }
 
         // the best area of the enclosing rectangle found so far
         int bestArea = Integer.MAX_VALUE;
-        return placement;
+
+        // the offsets
+        int x_offset = 0;
+        int y_offset = 0; //the amount of free space left until hitting the max height
+
+        for (int i = 0; i < rectangles.length; i++) {
+
+        }
+        return rectangles;
     }
 }

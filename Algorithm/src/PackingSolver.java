@@ -75,7 +75,7 @@ public class PackingSolver {
 
         /** Solve the packing problem */
         // solve the problem with a certain algorithm
-        solver = new SimpleSolver();
+        solver = new BasicSolver();
         Rectangle[] result = solver.solver(rectangles);
 
         // output the position of each rectangle

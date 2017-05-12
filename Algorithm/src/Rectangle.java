@@ -9,6 +9,8 @@ public class Rectangle {
     public int y;
     public boolean rotated;
 
+    public Rectangle() {}
+
     public Rectangle(int width, int height, int index) {
         this.width = width;
         this.height = height;

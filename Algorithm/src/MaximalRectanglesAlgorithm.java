@@ -6,12 +6,31 @@ import java.util.Arrays;
  * Implementation of the Maximal Rectangles Algorithm.
  * Based on the research paper and code by Jukka Jylanki.
  *
+ */
+
+/**
+ * --------------------------- SCORES LOG ---------------------------
  * Scores for the sample (test1.in - no rotations - no fixed height) with each heuristic:
  * SHORT SIDE FIT       = 14.02% wasted space
  * LONG SIDE FIT        = 29.94% wasted space
  * BEST AREA FIT        = 9.92% wasted space
  * BOTTOM LEFT RULE     = 24.08% wasted space
  * CONTACT POINT RULE   = 14.02% wasted space
+ *
+ * Scores for 03_01_hf_rn.txt
+ * BEST AREA FIT        = 36.36% wasted space
+ *
+ * Scores for 05_04_hf_rn.txt
+ * BEST AREA FIT        = 27.94% wasted space
+ *
+ * Scores for 10_04_hf_rn.txt
+ * BEST AREA FIT        = 23.97% wasted space
+ *
+ * Scores for 25_03_hf_rn.txt
+ * BEST AREA FIT        = 17.82% wasted space
+ *
+ * Scores for 10000_03_hf_rn.txt
+ *      NO scores recorded since the execution takes too much time.
  */
 public class MaximalRectanglesAlgorithm implements Solver {
     /** DEBUGGING ONLY */
@@ -69,7 +88,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
             else height++;
             turn = !turn;
         } while ((orderedRectangles = insertRectangles(new ArrayList<>(arr),
-                FreeRectangleHeuristic.ContactPointRule)) == null);
+                FreeRectangleHeuristic.BestAreaFit)) == null);
 
         return orderedRectangles;
     }

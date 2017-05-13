@@ -1,1 +1,2 @@
-test file: src/tests/test1.in
+test file: src/tests/canvas_testcases/25_03_hf_rn.txt
+runtime = 0.044283s

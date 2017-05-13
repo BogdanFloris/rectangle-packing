@@ -1,8 +1,9 @@
 import java.io.*;
+import java.text.DecimalFormat;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/25_03_hf_rn.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -75,7 +76,16 @@ public class PackingSolver {
 
         /** Solve the packing problem */
         // solve the problem with a certain algorithm
+        long startTime = System.nanoTime();
         solver = new MaximalRectanglesAlgorithm(rotations);
+        long endTime = System.nanoTime();
+
+        // display running time
+        debug.println("runtime = " +
+                new DecimalFormat("#0.000000").format((double) (endTime - startTime) * (10e-9)) +
+                "s");
+        debug.flush();
+
         Rectangle[] result = solver.solver(rectangles);
 
         // output the position of each rectangle

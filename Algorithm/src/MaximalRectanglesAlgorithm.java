@@ -1,35 +1,53 @@
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Implementation of the Maximal Rectangles Algorithm.
  * Based on the research paper and code by Jukka Jylanki.
  *
+ * The Global Best Fit Optimization is applied in this variant.
+ * (i.e. at each step we choose the rectangle which produces the best score - we
+ * do not place rectangles individually in an online fashion).
+ *
+ * The Best Bin Fit Optimization is applied in this variant.
+ * (i.e. whenever we have to place a rectangle, we choose the best empty bin to place
+ * it in).
+ *
+ * (NOTE: in the paper it is specified that one can achieve the best results by using
+ *  MAXRECTS with GLOBAL best fit, BEST BIN fit and BEST SHORT SIDE FIT)
+ *
+ * Time Complexity: Theta(n * |F|^2), where |F| represents the initial are of the bin.
+ * Thus, the bigger the bin, the slower the algorithm.
+ *
+ * Space Complexity: Theta(|F|), where |F| is the free space (i.e. the initial bin)
+ *
  */
 
 /**
  * --------------------------- SCORES LOG ---------------------------
- * Scores for the sample (test1.in - no rotations - no fixed height) with each heuristic:
+ * Scores for the sample (test1.in - no rotations - no fixed height) with each heuristic - NO PRE-PROCESSING:
  * SHORT SIDE FIT       = 14.02% wasted space
  * LONG SIDE FIT        = 29.94% wasted space
  * BEST AREA FIT        = 9.92% wasted space
  * BOTTOM LEFT RULE     = 24.08% wasted space
  * CONTACT POINT RULE   = 14.02% wasted space
  *
- * Scores for 03_01_hf_rn.txt
+ * Scores for 03_01_hf_rn.txt - NO PRE-PROCESSING
  * BEST AREA FIT        = 36.36% wasted space
  *
- * Scores for 05_04_hf_rn.txt
+ * Scores for 05_04_hf_rn.txt - NO PRE-PROCESSING
  * BEST AREA FIT        = 27.94% wasted space
  *
- * Scores for 10_04_hf_rn.txt
+ * Scores for 10_04_hf_rn.txt - NO PRE-PROCESSING
  * BEST AREA FIT        = 23.97% wasted space
  *
- * Scores for 25_03_hf_rn.txt
+ * Scores for 25_03_hf_rn.txt - NO PRE-PROCESSING
  * BEST AREA FIT        = 17.82% wasted space
  *
- * Scores for 10000_03_hf_rn.txt
+ * Scores for 10000_03_hf_rn.txt - NO PRE-PROCESSING
  *      NO scores recorded since the execution takes too much time.
  */
 public class MaximalRectanglesAlgorithm implements Solver {
@@ -52,6 +70,22 @@ public class MaximalRectanglesAlgorithm implements Solver {
         BestAreaFit, // positions the rectangles into the smallest free rectangle into which it fits
         BottomLeftRule, // basic placement (kinda like Tetris)
         ContactPointRule // chooses the placement where the rectangle touches other rectangles as much as possible
+    }
+
+    public enum PreprocessHeuristic {
+        ASCA,           // sort by ascending area
+        DESCA,          // sort by descending area
+        ASCSS,          // sort by the shorter side first, and then by the longer side, ascending
+        DESCSS,         // sort by the shorter side first, and then by the longer side, descending
+        ASCLS,          // sort by the longer side first, and then by the shorter side, ascending
+        DESCLS,         // sort by the longer side first, and then by the shorter side, descending
+        ASCPERIM,       // sort by perimeter, ascending
+        DESCPERIM,      // sort by perimeter, descending
+        ASCDIFF,        // sort by the abs. difference in side lengths (|w_a - h_a| < |w_b - h_b|), ascending
+        DESCDIFF,       // sort by the abs. difference in side lengths (|w_a - h_a| < |w_b - h_b|), descending
+        ASCRATIO,       // sort by the ratio in side lengths (w_a / h_a < w_b / h_b), ascending
+        DESCRATIO,      // sort by the ratio in side lengths (w_a / h_a < w_b / h_b), descending
+        NONE,           // do not do any pre-processing
     }
 
     @Override
@@ -77,6 +111,9 @@ public class MaximalRectanglesAlgorithm implements Solver {
 
         ArrayList<Rectangle> arr = new ArrayList<>();
         arr.addAll(Arrays.asList(rectangles));
+
+        // do some pre-processing
+        preprocess(arr, PreprocessHeuristic.DESCSS);
 
         // each iteration only one of: width, height will be updated
         boolean turn = true;
@@ -117,6 +154,74 @@ public class MaximalRectanglesAlgorithm implements Solver {
         usedRectangles = new ArrayList<>();
         freeRectangles = new ArrayList<>();
         freeRectangles.add(enclosingRect);
+    }
+
+    /**
+     * Before running the algorithm, sort the rectangles according to a heuristic.
+     * The best performing heuristic according to the book is DESCSS.
+     *
+     * @param rectangles the list of rectangles to be sorted
+     * @param heuristic the heuristic used in the pre-processing of the rectangles
+     */
+    @SuppressWarnings("Duplicates")
+    private void preprocess(ArrayList<Rectangle> rectangles, PreprocessHeuristic heuristic) {
+        Collections.sort(rectangles, new Comparator<Rectangle>() {
+            @Override
+            public int compare(Rectangle o1, Rectangle o2) {
+                int shortOne = Math.min(o1.width, o1.height);
+                int shortTwo = Math.min(o2.width, o2.height);
+                int longOne = Math.max(o1.width, o1.height);
+                int longTwo = Math.max(o1.width, o1.height);
+
+                switch (heuristic) {
+                    case ASCA:
+                        return o1.width * o1.height - o2.width * o2.height;
+                    case DESCA:
+                        return o2.width * o2.height - o1.width * o1.height;
+                    case ASCSS:
+                        if (shortOne == shortTwo && longOne == longTwo) return 0;
+                        if (shortOne < shortTwo || (shortOne == shortTwo && longOne < longTwo)) return -1;
+                        return 1;
+                    case DESCSS:
+                        if (shortOne == shortTwo && longOne == longTwo) return 0;
+                        if (shortOne < shortTwo || (shortOne == shortTwo && longOne < longTwo)) return 1;
+                        return -1;
+                    case ASCLS:
+                        if (longOne == longTwo && shortOne == shortTwo) return 0;
+                        if (longOne < longTwo || (longOne == longTwo && shortOne < shortTwo)) return -1;
+                        return 1;
+                    case DESCLS:
+                        if (longOne == longTwo && shortOne == shortTwo) return 0;
+                        if (longOne < longTwo || (longOne == longTwo && shortOne < shortTwo)) return 1;
+                        return -1;
+                    case ASCPERIM:
+                        if (o1.width + o1.height < o2.width + o2.height) return -1;
+                        else if (o1.width + o1.height > o2.width + o2.height) return 1;
+                        else return 0;
+                    case DESCPERIM:
+                        if (o1.width + o1.height < o2.width + o2.height) return 1;
+                        else if (o1.width + o1.height > o2.width + o2.height) return -1;
+                        else return 0;
+                    case ASCDIFF:
+                        if (Math.abs(o1.width - o1.height) < Math.abs(o2.width - o2.height)) return -1;
+                        else if (Math.abs(o1.width - o1.height) > Math.abs(o2.width - o2.height)) return 1;
+                        else return 0;
+                    case DESCDIFF:
+                        if (Math.abs(o1.width - o1.height) < Math.abs(o2.width - o2.height)) return 1;
+                        else if (Math.abs(o1.width - o1.height) > Math.abs(o2.width - o2.height)) return -1;
+                        else return 0;
+                    case ASCRATIO:
+                        if (o1.width * o2.height < o2.width * o1.height) return -1;
+                        else if (o1.width * o2.height > o2.width * o1.height) return 1;
+                        else return 0;
+                    case DESCRATIO:
+                        if (o1.width * o2.height < o2.width * o1.height) return 1;
+                        else if (o1.width * o2.height > o2.width * o1.height) return -1;
+                        else return 0;
+                }
+                return 0;
+            }
+        });
     }
 
     /**
@@ -643,7 +748,6 @@ public class MaximalRectanglesAlgorithm implements Solver {
             score += width;
         }
 
-        // TODO review and understand things here
         for (int i = 0; i < usedRectangles.size(); i++) {
             if (usedRectangles.get(i).x == x + width || usedRectangles.get(i).x + usedRectangles.get(i).width == x) {
                 score += CommonIntervalLength(usedRectangles.get(i).y,

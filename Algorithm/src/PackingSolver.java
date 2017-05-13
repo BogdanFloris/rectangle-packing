@@ -3,7 +3,7 @@ import java.text.DecimalFormat;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/25_03_hf_rn.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 

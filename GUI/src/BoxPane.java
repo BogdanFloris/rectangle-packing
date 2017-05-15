@@ -1,3 +1,5 @@
+import com.sun.corba.se.impl.orbutil.graph.Graph;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -88,8 +90,10 @@ public class BoxPane extends JPanel {
 
     public void drawResult(Result result){
         setResult(result);
-        drawing(this.getGraphics());
+        paintComponent(this.getGraphics());
     }
+
+
 
     public void paintComponent(Graphics g){
         super.paintComponent(g);
@@ -106,7 +110,7 @@ public class BoxPane extends JPanel {
 
         int i = 0;
         for(double x = 0; x < scale(result.width); x+=scale){
-            i++;
+
             if(i%5==0){
                 g.setColor(Color.WHITE);
                 g.fillRect((int)x-1,0,1,scale(result.height));
@@ -114,10 +118,10 @@ public class BoxPane extends JPanel {
                 g.setColor(Color.GRAY);
                 g.drawLine((int)x,0,(int)x,scale(result.height));
             }
+            i++;
         }
         i = 0;
         for(double y = 0; y < scale(result.height); y+=scale){
-            i++;
             if(i%5==0){
                 g.setColor(Color.WHITE);
                 g.fillRect((int)0,(int)y-1,scale(result.width),1);
@@ -125,6 +129,7 @@ public class BoxPane extends JPanel {
                 g.setColor(Color.GRAY);
                 g.drawLine(0,(int)y,scale(result.width),(int)y);
             }
+            i++;
         }
 
         drawRectangles(g);
@@ -156,7 +161,7 @@ public class BoxPane extends JPanel {
         g.drawRect(scale(r.x),scale(r.y),scale(r.width),scale(r.height));
         g.setColor(Color.WHITE);
         g.setFont(font);
-        g.drawString(Integer.toString(r.index),scale(r.x)+scale(r.width/2)-5,scale(r.y)+scale(r.height/2)+fontSize/2);
+        //g.drawString(Integer.toString(r.index),scale(r.x)+scale(r.width/2)-5,scale(r.y)+scale(r.height/2)+fontSize/2);
     }
 
     public int scale(int value){

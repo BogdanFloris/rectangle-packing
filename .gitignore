@@ -4,6 +4,7 @@ GUI/.idea/
 GUI/*.iml
 *.iml
 *.iws
+*.ipr
 Algorithm/out/
 GUI/out
 .idea

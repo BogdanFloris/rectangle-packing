@@ -103,4 +103,46 @@ public class Generator {
 
     }*/
 
+    /*
+    A harder benchmark. oriented equal-perimeter rectangle benchmark
+     from page 52 https://jair.org/media/3735/live-3735-6794-jair.pdf
+     page 53 contains an optimal solution for N = 23
+
+    each instance is a set of rectangles of sizes 1×N, 2×(N −1), ..., (N −1)×2, N ×1,
+    and rectangles may not be rotated
+     */
+    public Test generateOrientedEqualPerimeter(boolean heightFixed, int n) {
+        Test test = new Test(n);
+        test.heightFixed = heightFixed;
+        test.rotations = false;
+
+        for(int i = 0; i < n; i++){
+            PackingRectangle pr = new PackingRectangle(i + 1,n - i, i);
+            test.rectangles[i] = pr;
+        }
+        return test;
+    }
+
+    /*
+    An even harder benchmark. unoriented double-perimeter rectangle benchmark
+     from page 52 https://jair.org/media/3735/live-3735-6794-jair.pdf
+
+     where instances
+    are described as a set of rectangles 1×(2N −1), 2×(2N −2), ..., (N −1)×(N + 1),
+    N × N, and rectangles may be rotated by 90-degrees
+     */
+    public Test generateUnOrientedDoublePerimeter(boolean heightFixed, int n) {
+        Test test = new Test(n);
+        test.heightFixed = heightFixed;
+        test.rotations = true;
+
+        for(int i = 0; i < n; i++){
+            PackingRectangle pr = new PackingRectangle(i + 1,2 * n - 1 - i, i);
+            test.rectangles[i] = pr;
+        }
+        return test;
+    }
+
+
+
 }

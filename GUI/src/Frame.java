@@ -108,7 +108,8 @@ public class Frame extends JFrame implements ActionListener {
         generate.addActionListener(this);
         p4.add(generate);
 
-        generatePicker = new JComboBox(new String[]{"Simple","Random","Increasing"});
+        generatePicker = new JComboBox(new String[]{"Simple","Random","Increasing","oriented equal-perimeter",
+        "unoriented double-perimeter"});
         generatePicker.addActionListener(this);
         p4.add(generatePicker);
 
@@ -213,16 +214,23 @@ public class Frame extends JFrame implements ActionListener {
                 resultPicker.addItem(simple);
                 resultPicker.setSelectedItem(simple);
                 setResult(simple);
-            }else if(generatePicker.getSelectedItem().equals("Increasing")){
+            } else if(generatePicker.getSelectedItem().equals("Increasing")){
                 Test increasing = gen.generateIncreasingSquare(hf,ra, n, minS);
                 increasing.writeFile("Increasing_"+fileName);
-            }else if(generatePicker.getSelectedItem().equals("Random")){
+            } else if(generatePicker.getSelectedItem().equals("Random")){
                 Test random = gen.generateRandom(hf,ra,n,h,minS,maxS);
                 random.writeFile("Random_"+fileName);
+            } else if(generatePicker.getSelectedItem().equals("oriented equal-perimeter")){
+                Test orientedEqualPerimeter = gen.generateOrientedEqualPerimeter(hf, n);
+                orientedEqualPerimeter.writeFile("oriented equal-perimeter_"+fileName);
+            } else if(generatePicker.getSelectedItem().equals("unoriented double-perimeter")){
+                Test orientedEqualPerimeter = gen.generateUnOrientedDoublePerimeter(hf, n);
+                orientedEqualPerimeter.writeFile("unoriented double-perimeter_"+fileName);
             }
 
 
-        }
+
+    }
     }
 
     public static void setHoverInfo(PackingRectangle hover) {

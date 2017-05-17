@@ -36,4 +36,17 @@ public class PackingRectangle {
     public Color getColor(){
         return color;
     }
+
+    public int right(){
+        return x+width;
+    }
+    public int left(){
+        return x;
+    }
+    public int bottom(){
+        return y;
+    }
+    public int top(){
+        return y+height;
+    }
 }

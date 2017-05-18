@@ -55,7 +55,8 @@ public class MaximalRectanglesAlgorithm implements Solver {
     private PrintWriter debug = new PrintWriter(System.err);
     /** DEBUGGING ONLY */
 
-    private boolean rotationsAllowed;                   // whether rectangles can be rotated or not
+    private boolean areRotationsAllowed;                // whether rectangles can be rotated or not
+    private boolean isHeightFixed;                      // whether the enclosing rectangle has a fixed height or not
     private int binWidth;                               // the width of the enclosing rectangle
     private int binHeight;                              // the height of the enclosing rectangle
     private ArrayList<Rectangle> usedRectangles;        // list of used rectangles
@@ -91,7 +92,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         // the initial values of the bin
-        int width, height;
+        int width = binWidth, height = binHeight;
 
         // the array in which the rectangles have updated (x, y) coordinates
         Rectangle[] orderedRectangles;
@@ -107,7 +108,10 @@ public class MaximalRectanglesAlgorithm implements Solver {
             }
         }
 
-        width = height = startValue;
+        width = startValue;
+        if (!this.isHeightFixed) {
+            height = startValue;
+        }
 
         ArrayList<Rectangle> arr = new ArrayList<>();
         arr.addAll(Arrays.asList(rectangles));
@@ -120,19 +124,33 @@ public class MaximalRectanglesAlgorithm implements Solver {
 
         // try bins until we find one in which all the rectangles fit
         do {
-            init(width, height);
-            if (turn) width++;
-            else height++;
-            turn = !turn;
+            if (this.isHeightFixed) { // only increase the width if the height is fixed
+                init(width, height);
+                width++;
+            } else { // increase width and height alternatively if the height is free
+                init(width, height);
+
+                if (turn) width++;
+                else height++;
+
+                turn = !turn;
+            }
         } while ((orderedRectangles = insertRectangles(new ArrayList<>(arr),
                 FreeRectangleHeuristic.BestAreaFit)) == null);
 
         return orderedRectangles;
     }
 
-    public MaximalRectanglesAlgorithm(boolean rotationsAllowed) {
-        this.rotationsAllowed = rotationsAllowed;
-        init(0, 0);
+    public MaximalRectanglesAlgorithm(boolean areRotationsAllowed, int fixedHeight) {
+        this.binWidth = 0;
+        this.binHeight = 0;
+
+        this.areRotationsAllowed = areRotationsAllowed;
+        this.isHeightFixed = (fixedHeight == 0) ? false : true;
+
+        if (this.isHeightFixed) {
+            this.binHeight = fixedHeight;
+        }
     }
 
     /**
@@ -455,7 +473,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                 }
             }
 
-            if (rotationsAllowed) {
+            if (areRotationsAllowed) {
                 // check to see if the rotated rectangle fits into the empty space
                 int leftoverHorizontal = Math.abs(freeRectangles.get(i).width - rectangle.height);
                 int leftoverVertical = Math.abs(freeRectangles.get(i).height - rectangle.width);
@@ -469,6 +487,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                     bestRect.width = rectangle.width;
                     bestRect.height = rectangle.height;
                     bestRect.index = rectangle.index;
+                    bestRect.rotated = true;
                     bestShortSideFit = shortSideFit;
                     bestLongSideFit = longSideFit;
                 }
@@ -519,7 +538,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                 }
             }
 
-            if (rotationsAllowed) {
+            if (areRotationsAllowed) {
                 // check to see if the rotated rectangle fits into the empty space
                 int leftoverHorizontal = Math.abs(freeRectangles.get(i).width - rectangle.height);
                 int leftoverVertical = Math.abs(freeRectangles.get(i).height - rectangle.width);
@@ -533,6 +552,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                     bestRect.width = rectangle.width;
                     bestRect.height = rectangle.height;
                     bestRect.index = rectangle.index;
+                    bestRect.rotated = true;
                     bestShortSideFit = shortSideFit;
                     bestLongSideFit = longSideFit;
                 }
@@ -584,7 +604,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                 }
             }
 
-            if (rotationsAllowed) {
+            if (areRotationsAllowed) {
                 // check to see if the rotated rectangle fits into the empty space
                 if (freeRectangles.get(i).width >= rectangle.height &&
                         freeRectangles.get(i).height >= rectangle.width) {
@@ -598,6 +618,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                         bestRect.width = rectangle.height;
                         bestRect.height = rectangle.width;
                         bestRect.index = rectangle.index;
+                        bestRect.rotated = true;
                         bestAreaFit = areaFit;
                         bestShortSideFit = shortSideFit;
                     }
@@ -645,7 +666,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                 }
             }
 
-            if (rotationsAllowed) {
+            if (areRotationsAllowed) {
                 // check to see if the rotated rectangle fits into the empty space
                 if (freeRectangles.get(i).width >= rectangle.height &&
                         freeRectangles.get(i).height >= rectangle.width) {
@@ -656,6 +677,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                         bestRect.width = rectangle.height;
                         bestRect.height = rectangle.width;
                         bestRect.index = rectangle.index;
+                        bestRect.rotated = true;
                         bestY = topSideY;
                         bestX = freeRectangles.get(i).x;
                     }
@@ -702,7 +724,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                 }
             }
 
-            if (rotationsAllowed) {
+            if (areRotationsAllowed) {
                 // check to see if the rotated rectangle fits into the empty space
                 if (freeRectangles.get(i).width >= rectangle.height &&
                         freeRectangles.get(i).height >= rectangle.width) {
@@ -715,6 +737,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
                         bestRect.width = rectangle.height;
                         bestRect.height = rectangle.width;
                         bestRect.index = rectangle.index;
+                        bestRect.rotated = true;
                         bestScore = score;
                     }
                 }
@@ -805,5 +828,14 @@ public class MaximalRectanglesAlgorithm implements Solver {
             this.score1 = Integer.MAX_VALUE;
             this.score2 = Integer.MAX_VALUE;
         }
+    }
+
+    /**
+     * Get the enclosing rectangle.
+     *
+     * @return the enclosing rectangle
+     */
+    public Rectangle getEnclosingRectangle() {
+        return new Rectangle(binWidth, binHeight, -1);
     }
 }

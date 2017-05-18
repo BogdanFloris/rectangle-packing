@@ -1,2 +1,5 @@
-test file: src/tests/test1.in
-runtime = 0.085904s
+test file: src/tests/canvas_testcases/03_02_hf_rn.txt
+rotations: not allowed
+height: free
+running time: 0.00794523 seconds
+enclosing rectangle dimensions: width = 13; height = 13

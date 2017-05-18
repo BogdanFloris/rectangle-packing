@@ -1,9 +1,10 @@
 import java.io.*;
 import java.text.DecimalFormat;
+import java.util.Date;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_02_hf_rn.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -19,6 +20,9 @@ public class PackingSolver {
     private PrintWriter out;                                // the standard output stream of the program
     private PrintWriter debug;                              // the standard error stream of the program
 
+    // MAKE FALSE WHEN SUBMITTING ON MOMOTOR
+    private static final boolean IN_DEBUG = true;
+
     /**
      * solver method that provides the final algorithm.
      */
@@ -32,6 +36,8 @@ public class PackingSolver {
         variant = in.next();
         if (variant.equals("fixed")) {
             height = in.nextInt();
+        } else {
+            height = 0;
         }
 
         // skip "rotations allowed"
@@ -59,6 +65,7 @@ public class PackingSolver {
         // write the initial part (identical with the input)
         out.print("container height: " + variant);
         if (variant.equals("fixed")) {
+            out.print(" ");
             out.print(height);
         }
         out.println();
@@ -76,23 +83,49 @@ public class PackingSolver {
 
         /** Solve the packing problem */
         // solve the problem with a certain algorithm
-        long startTime = System.nanoTime();
-        solver = new MaximalRectanglesAlgorithm(rotations);
-        long endTime = System.nanoTime();
 
-        // display running time
-        debug.println("runtime = " +
-                new DecimalFormat("#0.000000").format((double) (endTime - startTime) * (10e-9)) +
-                "s");
-        debug.flush();
+        // output some useful info in the debug file
+        debug.println("rotations: " + (rotations ? "allowed" : "not allowed"));
+        debug.println("height: " + (height == 0 ? "free" : "fixed"));
+
+        long startTime = System.nanoTime();
+        solver = new MaximalRectanglesAlgorithm(rotations, height);
 
         Rectangle[] result = solver.solver(rectangles);
+
+        long endTime = System.nanoTime();
+
+        // print the running time
+        debug.println("running time: " +
+                new DecimalFormat("#0.00000000").format((double) (endTime - startTime) * 1e-9)
+                + " seconds");
+
+        Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingRectangle();
+        debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
+                + "; height = " + enclosingRectangle.height);
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated
         for (Rectangle rectangle : result) {
             out.println((rotations ? (rectangle.rotated ? "yes " : "no ") : "")
                         + rectangle.x + " " + rectangle.y);
+        }
+
+        // some correctness checking to be done only while locally running the code.
+        if (IN_DEBUG) {
+            // check if the indices are in the correct order
+            // i.e. the rectangles are displayed in the same order
+            // as they appear in the input
+            int index = 1;
+            for (Rectangle rectangle : result) {
+                assert(rectangle.index == index);
+                index++;
+            }
+
+            // check if the height remains fixed
+            if (height > 0) {
+                assert(enclosingRectangle.height == height);
+            }
         }
     }
 

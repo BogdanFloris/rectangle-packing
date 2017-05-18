@@ -8,6 +8,7 @@ public class Rectangle {
     public int x;
     public int y;
     public boolean rotated;
+    public Node fit;
 
     public Rectangle() {
         this.width = 0;
@@ -16,6 +17,7 @@ public class Rectangle {
         this.x = 0;
         this.y = 0;
         this.rotated = false;
+        this.fit = null;
     }
 
     public Rectangle(int width, int height, int index) {
@@ -23,6 +25,7 @@ public class Rectangle {
         this.height = height;
         this.index = index;
         this.rotated = false;
+        this.fit = null;
     }
 
     public Rectangle(int x, int y) {
@@ -37,6 +40,7 @@ public class Rectangle {
         this.x = other.x;
         this.y = other.y;
         this.rotated = other.rotated;
+        this.fit = other.fit;
     }
 
     @Override

@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_02_hf_rn.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/Random_48077.in";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -89,7 +89,7 @@ public class PackingSolver {
         debug.println("height: " + (height == 0 ? "free" : "fixed"));
 
         long startTime = System.nanoTime();
-        solver = new MaximalRectanglesAlgorithm(rotations, height);
+        solver = new BinaryTreeBinPacking();
 
         Rectangle[] result = solver.solver(rectangles);
 
@@ -100,9 +100,9 @@ public class PackingSolver {
                 new DecimalFormat("#0.00000000").format((double) (endTime - startTime) * 1e-9)
                 + " seconds");
 
-        Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingRectangle();
-        debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
-                + "; height = " + enclosingRectangle.height);
+        //Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingRectangle();
+        //debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
+                //+ "; height = " + enclosingRectangle.height);
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated
@@ -123,9 +123,9 @@ public class PackingSolver {
             }
 
             // check if the height remains fixed
-            if (height > 0) {
-                assert(enclosingRectangle.height == height);
-            }
+//            if (height > 0) {
+//                assert(enclosingRectangle.height == height);
+//            }
         }
     }
 

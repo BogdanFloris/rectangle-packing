@@ -4,7 +4,3 @@ number of rectangles: 3
 4 13
 4 8
 7 1
-placement of rectangles
-0 0
-4 0
-4 8

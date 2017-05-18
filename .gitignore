@@ -1,6 +1,8 @@
 Algorithm/.idea/
 *.iml
 Algorithm/out/
+GUI/
+/GUI
 *.aux
 *.log
 *.out

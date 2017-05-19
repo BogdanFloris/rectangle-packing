@@ -112,6 +112,7 @@ public class OptimalRectanglePacking implements Solver {
             }
 
             // if feasibility tests passed
+            // TODO manage feasibility accordingly
             if (!isFeasible(binWidth, binHeight, rectangles)) {
                 binHeight++;
             } else {
@@ -325,10 +326,12 @@ public class OptimalRectanglePacking implements Solver {
 
     public static void main(String[] args) {
         OptimalRectanglePacking opt = new OptimalRectanglePacking();
-        Rectangle[] test = new Rectangle[3];
-        test[0] = new Rectangle(6, 6, 0);
-        test[1] = new Rectangle(4, 4, 1);
-        test[2] = new Rectangle(2, 2, 2);
+        Rectangle[] test = new Rectangle[5];
+        test[0] = new Rectangle(60, 60, 0);
+        test[1] = new Rectangle(40, 40, 1);
+        test[2] = new Rectangle(20, 20, 2);
+        test[3] = new Rectangle(30, 40, 3);
+        test[4] = new Rectangle(50, 60, 4);
         opt.solver(test);
     }
 }

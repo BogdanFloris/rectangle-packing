@@ -154,7 +154,8 @@ public class Result {
                     + rectangle.x + " " + rectangle.y +"\n");
         }
 
-        return sb.toString();
+        text = sb.toString();
+        return text;
     }
 
     public void calculateEfficiency(){

@@ -100,7 +100,7 @@ public class PackingSolver {
                 new DecimalFormat("#0.00000000").format((double) (endTime - startTime) * 1e-9)
                 + " seconds");
 
-        //Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingRectangle();
+        //Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingBin();
         //debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
                 //+ "; height = " + enclosingRectangle.height);
 

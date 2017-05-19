@@ -14,7 +14,7 @@ public class Generator {
 
     }
 
-    //Generates a random set of rectangles
+    //Generates a random test set of n rectangles
     public Test generateRandom(boolean heightFixed, boolean rotationsAllowed, int n, int containerHeight, int rectMin, int rectMax){
         Test test = new Test(n);
         test.heightFixed = heightFixed;
@@ -35,7 +35,10 @@ public class Generator {
 
         return new PackingRectangle(width,height,index);
     }
-
+    /*
+    For a number of iterations it tries to place a random sized rectangle at a random location and tests if it fits,
+    if so, it places it.
+     */
     public Result fillRandom(boolean heightFixed, boolean rotationsAllowed, int width, int height, int rectMin, int rectMax, int iterations){
         Result result = new Result(heightFixed,rotationsAllowed,width,height);
         ArrayList<PackingRectangle> list = new ArrayList<>();
@@ -44,19 +47,18 @@ public class Generator {
         int tries = 0;
         while(!filled){
             tries++;
-            //System.out.println("Trying "+tries);
             PackingRectangle rect = generateRectangle(i, rectMin, rectMax);
 
-            rect.x = (int) Math.floor(Math.random()*(width-rect.width+1));
-            rect.y = (int) Math.floor(Math.random()*(height-rect.height+1));
+            if(rotationsAllowed){
+                rect.rotated = Math.random() < 0.5? true:false;
+            }
 
-            //System.out.println(rect.x +","+rect.y);
+            rect.x = (int) Math.floor(Math.random()*(width-rect.getWidth()+1));
+            rect.y = (int) Math.floor(Math.random()*(height-rect.getHeight()+1));
+
             boolean canPlace = true;
             for(PackingRectangle placedRect: list){
-                if(rect.right()<placedRect.left()+1 || placedRect.right()<rect.left()+1 || rect.top()<placedRect.bottom()+1 || placedRect.top()<rect.bottom()+1){
-                }else{
-                    canPlace = false;
-                }
+               if(rect.overlaps(placedRect)) canPlace = false;
             }
 
             if(canPlace){
@@ -76,6 +78,9 @@ public class Generator {
         return result;
     }
 
+    /*
+    Generates a test set of squares starting from a minimum size and increase by 1 n times.
+     */
     public Test generateIncreasingSquare(boolean heightFixed, boolean rotationsAllowed, int n, int minSize){
         Test test = new Test(n);
         test.heightFixed = heightFixed;
@@ -86,22 +91,7 @@ public class Generator {
         }
         return test;
     }
-    //Generate Optimal?
-    /*public Result generateOptimal(boolean heightFixed, boolean rotationsAllowed, int width, int height, int n){
-        Result result = new Result(heightFixed, rotationsAllowed, width, height, n);
 
-        int xIncrement = 0;
-        int yIncrement = 0;
-
-        int index = 0;
-        for(int y = 0; y < height; y += yIncrement){
-            for(int x = 0; x <  width;  x += xIncrement){
-                //result.rectangles[index]  = new PackingRectangle();
-                //i++;
-            }
-        }
-
-    }*/
 
     /*
     A harder benchmark. oriented equal-perimeter rectangle benchmark
@@ -142,6 +132,8 @@ public class Generator {
         }
         return test;
     }
+
+
 
 
 

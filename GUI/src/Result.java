@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.io.*;
 
 /**
@@ -7,6 +8,7 @@ public class Result {
     private File output;
     private PrintWriter out;                                // the standard output stream of the program
     private Reader reader;
+    private String text;
 
     public int height = 0;
     public boolean heightFixed = false;
@@ -20,13 +22,18 @@ public class Result {
     public int filledSpace = 0;
     public int wastedSpace;
     public double wastePercentage;
+    public boolean hasOverlap = false;
+    public boolean exceedsHeight = false;
 
-    public Result(String fileName){
-        this(new File("../Algorithm/src/tests/"+fileName+".out"));
-    }
     public Result(File file){
         output = file;
         reader = new Reader(output);
+        read(reader);
+        text = write();
+    }
+
+    public void read(Reader r){
+        reader = r;
 
         //Container Height
         reader.skipWord(2);
@@ -57,8 +64,7 @@ public class Result {
             boolean rotated = rotations?reader.next().equals("yes")?true:false:false;
             rectangles[i].place(rotated, reader.nextInt(), reader.nextInt());
         }
-
-        calculateEfficiency();
+        text = write();
     }
 
     public Result(boolean heightFixed, boolean rotationsAllowed, int width, int height, int n) {
@@ -120,46 +126,57 @@ public class Result {
         }
 
         /** Write the Output */
+        out.print(write());
+        out.close();
+    }
+
+    public String write(){
+        StringBuilder sb = new StringBuilder();
         // write the initial part (identical with the input)
-        out.print("container height: " + (heightFixed?"fixed "+height:"free"));
+        sb.append("container height: " + (heightFixed?"fixed "+height:"free")+"\n");
 
-        out.println();
 
-        out.println("rotations allowed: " + (rotations ? "yes" : "no"));
+        sb.append("rotations allowed: " + (rotations ? "yes" : "no")+"\n");
 
-        out.println("number of rectangles: " + n);
+        sb.append("number of rectangles: " + n + "\n");
 
         for (PackingRectangle rectangle : rectangles) {
-            out.println(rectangle);
+            sb.append(rectangle+ "\n");
         }
         // output the placement of the rectangles
-        out.println("placement of rectangles");
+        sb.append("placement of rectangles" + "\n");
 
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated
         for (PackingRectangle rectangle : rectangles) {
-            out.println((rotations ? (rectangle.rotated ? "yes " : "no ") : "")
-                    + rectangle.x + " " + rectangle.y);
+            sb.append((rotations ? (rectangle.rotated ? "yes " : "no ") : "")
+                    + rectangle.x + " " + rectangle.y +"\n");
         }
-        out.close();
 
-        calculateEfficiency();
-
+        return sb.toString();
     }
 
     public void calculateEfficiency(){
+        hasOverlap = hasOverlap();
+
         //Calculate Bounding Box
-        if(height == 0){
-            for(PackingRectangle r: rectangles){
-                if(r.y + r.height > height) height = r.y + r.height;
-                if(r.x + r.width > width) width = r.x + r.width;
-            }
-        }
+        int calculatedHeight = height;
+       for(PackingRectangle r: rectangles){
+            if(r.y + r.getHeight() > calculatedHeight) calculatedHeight = r.y + r.getHeight();
+            if(r.x + r.getWidth() > width) width = r.x + r.getWidth();
+       }
+       if(heightFixed){
+           exceedsHeight = calculatedHeight > height? true: false;
+       }else{
+           height = calculatedHeight;
+       }
+
 
         //Calculate Area
         area = height*width;
 
+       filledSpace = 0;
         //Calculate filled & wasted space
         for(PackingRectangle r: rectangles){
             filledSpace += r.area;
@@ -168,6 +185,43 @@ public class Result {
 
         //Waste Percentage
         wastePercentage = (double)wastedSpace / (double)area * 100.0;
+
+
     }
 
+    public boolean hasOverlap(){
+        for(PackingRectangle r1: rectangles){
+            for(PackingRectangle r2: rectangles){
+                if(!r1.equals(r2) && r1.overlaps(r2)){
+                    r1.setColor(Color.BLACK);
+                    r2.setColor(Color.WHITE);
+                    System.out.println(toString()+" has overlap: \n" +
+                            r1.toString() + " @ " + r1.x + ", "+r1.y+" & "+r2.toString()+ " @ " + r2.x + ", "+r2.y+
+                            "\nthey are colored black & white");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean isValid(){
+        return !hasOverlap && !exceedsHeight;
+    }
+
+
+    public void reload(String text) {
+        read(new Reader(text));
+        calculateEfficiency();
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public Result cpy(){
+        Result copy = new Result(output);
+        copy.reload(write());
+        return copy;
+    }
 }

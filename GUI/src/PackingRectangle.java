@@ -4,14 +4,18 @@ import java.awt.*;
  * Main class that represents a rectangle.
  */
 public class PackingRectangle {
+    //Values before placement (width and height not affected by rotation)
     public int width;
     public int height;
     public int index;
+    public int area;
+
+    private Color color;
+
+    //Values after placement
     public int x;
     public int y;
     public boolean rotated;
-    public int area;
-    private Color color;
 
     public PackingRectangle(int width, int height, int index) {
         this.width = width;
@@ -19,6 +23,8 @@ public class PackingRectangle {
         this.index = index;
         this.rotated = false;
         this.area = width*height;
+
+        //Generates a random color
         this.color = new Color((int) (Math.random()*180+35),(int) (Math.random()*180+35),(int) (Math.random()*180+35));
     }
 
@@ -27,6 +33,18 @@ public class PackingRectangle {
         this.x = x;
         this.y = y;
     }
+
+    public boolean overlaps(PackingRectangle placedRect){
+        if(this.right() < placedRect.left()+1 ||
+                placedRect.right() < this.left()+1 ||
+                this.top() < placedRect.bottom()+1 ||
+                placedRect.top() < this.bottom()+1){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
 
     @Override
     public String toString() {
@@ -38,7 +56,7 @@ public class PackingRectangle {
     }
 
     public int right(){
-        return x+width;
+        return x+getWidth();
     }
     public int left(){
         return x;
@@ -47,6 +65,20 @@ public class PackingRectangle {
         return y;
     }
     public int top(){
-        return y+height;
+        return y+getHeight();
+    }
+
+    //Returns the width after optional rotation
+    public int getWidth(){
+        return rotated? height: width;
+    }
+
+    //Returns the height after optional rotation
+    public int getHeight(){
+        return rotated? width: height;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
     }
 }

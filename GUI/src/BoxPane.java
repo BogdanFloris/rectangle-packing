@@ -8,6 +8,7 @@ import java.awt.event.*;
  * Created by Job Savelsberg on 7-5-2017.
  */
 public class BoxPane extends JPanel {
+    private Frame frame;
     private JButton fill;
     private int width;
     private int height;
@@ -21,9 +22,11 @@ public class BoxPane extends JPanel {
     private int mouseX = 0;
     private int mouseY = 0;
 
+    public boolean showIndexes = false;
     private PackingRectangle hover = null;
 
-    public BoxPane(){
+    public BoxPane(Frame frame){
+        this.frame = frame;
         height = Frame.height-60;
         width = height;
         this.setSize(width,height);
@@ -63,25 +66,27 @@ public class BoxPane extends JPanel {
 
             @Override
             public void mouseMoved(MouseEvent e) {
-                mouseX = e.getX();
-                mouseY = e.getY();
-                if(mouseX>0&&mouseX<scale(result.width) && mouseY>0&&mouseY<scale(result.height)) {
-                    for (PackingRectangle r : result.rectangles) {
-                        if (mouseX > scale(r.x) && mouseX < scale(r.x + r.width)) {
-                            if (mouseY > scale(r.y) && mouseY < scale(r.y + r.height)) {
-                                if(!r.equals(hover)){
-                                    drawRectangles(getGraphics());
-                                    drawRectangle(r, getGraphics(), r.getColor().brighter());
-                                    hover = r;
-                                    Frame.setHoverInfo(hover);
+                if (result != null) {
+                    mouseX = e.getX();
+                    mouseY = e.getY();
+                    if (mouseX > 0 && mouseX < scale(result.width) && mouseY > 0 && mouseY < scale(result.height)) {
+                        for (PackingRectangle r : result.rectangles) {
+                            if (mouseX > scale(r.x) && mouseX < scale(r.x + r.getWidth())) {
+                                if (mouseY > scale(r.y) && mouseY < scale(r.y + r.getHeight())) {
+                                    if (!r.equals(hover)) {
+                                        drawRectangles(getGraphics());
+                                        drawRectangle(r, getGraphics(), r.getColor().brighter());
+                                        hover = r;
+                                        frame.setHoverInfo(hover);
+                                    }
                                 }
                             }
                         }
-                    }
-                }else{
-                    if(hover!=null){
-                        hover = null;
-                        drawRectangles(getGraphics());
+                    } else {
+                        if (hover != null) {
+                            hover = null;
+                            drawRectangles(getGraphics());
+                        }
                     }
                 }
             }
@@ -99,7 +104,9 @@ public class BoxPane extends JPanel {
         super.paintComponent(g);
         g.setColor(Color.DARK_GRAY);
         g.fillRect(0,0,getWidth(),getHeight());
-        drawing(g);
+        if(result!=null){
+            drawing(g);
+        }
     }
 
     public void drawing(Graphics g){
@@ -156,12 +163,14 @@ public class BoxPane extends JPanel {
 
     public void drawRectangle(PackingRectangle r, Graphics g, Color color){
         g.setColor(color);
-        g.fillRect(scale(r.x),scale(r.y),scale(r.width),scale(r.height));
+        g.fillRect(scale(r.x),scale(r.y),scale(r.getWidth()),scale(r.getHeight()));
         g.setColor(g.getColor().darker());
-        g.drawRect(scale(r.x),scale(r.y),scale(r.width),scale(r.height));
+        g.drawRect(scale(r.x),scale(r.y),scale(r.getWidth()),scale(r.getHeight()));
         g.setColor(Color.WHITE);
         g.setFont(font);
-        //g.drawString(Integer.toString(r.index),scale(r.x)+scale(r.width/2)-5,scale(r.y)+scale(r.height/2)+fontSize/2);
+        if(showIndexes){
+            g.drawString(Integer.toString(r.index),scale(r.x)+scale(r.getWidth()/2)-5,scale(r.y)+scale(r.getHeight()/2)+fontSize/2);
+        }
     }
 
     public int scale(int value){

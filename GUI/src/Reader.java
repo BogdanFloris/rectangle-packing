@@ -18,6 +18,10 @@ public class Reader {
         }
         tokenizer = null;
     }
+    public Reader(String s){
+        reader = new BufferedReader(new StringReader(s));
+        tokenizer = null;
+    }
 
     public String next() {
         while (tokenizer == null || !tokenizer.hasMoreTokens()) {

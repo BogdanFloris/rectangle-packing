@@ -1,10 +1,9 @@
 import java.io.*;
 import java.text.DecimalFormat;
-import java.util.Date;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/Random_48077.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_02_hf_rn.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -89,7 +88,7 @@ public class PackingSolver {
         debug.println("height: " + (height == 0 ? "free" : "fixed"));
 
         long startTime = System.nanoTime();
-        solver = new BinaryTreeBinPacking();
+        solver = new OptimalRectanglePacking();
 
         Rectangle[] result = solver.solver(rectangles);
 
@@ -116,7 +115,7 @@ public class PackingSolver {
             // check if the indices are in the correct order
             // i.e. the rectangles are displayed in the same order
             // as they appear in the input
-            int index = 1;
+            int index = 0;
             for (Rectangle rectangle : result) {
                 assert(rectangle.index == index);
                 index++;

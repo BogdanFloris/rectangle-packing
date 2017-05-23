@@ -9,6 +9,7 @@ public class Rectangle {
     public int y;
     public boolean rotated;
     public Node fit;
+    public int maximumDimension; // max between width and height
 
     public Rectangle() {
         this.width = 0;

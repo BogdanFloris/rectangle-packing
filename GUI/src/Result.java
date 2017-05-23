@@ -162,7 +162,8 @@ public class Result {
         hasOverlap = hasOverlap();
 
         //Calculate Bounding Box
-        int calculatedHeight = height;
+        int calculatedHeight = 0;
+        width = 0;
        for(PackingRectangle r: rectangles){
             if(r.y + r.getHeight() > calculatedHeight) calculatedHeight = r.y + r.getHeight();
             if(r.x + r.getWidth() > width) width = r.x + r.getWidth();
@@ -214,6 +215,7 @@ public class Result {
     public void reload(String text) {
         read(new Reader(text));
         calculateEfficiency();
+
     }
 
     public String getText() {

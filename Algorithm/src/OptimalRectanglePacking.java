@@ -103,8 +103,6 @@ public class OptimalRectanglePacking implements Solver {
             } else {
                 binWidth--;
             }
-
-//            System.out.println(binWidth + " " + binHeight);
         }
     }
 
@@ -315,5 +313,7 @@ public class OptimalRectanglePacking implements Solver {
         for (int i = 0; i < optimal.length; i++) {
             System.out.println(optimal[i].x + " " + optimal[i].y);
         }
+        System.out.println();
+        opt.print(optimal);
     }
 }

@@ -1,76 +1,44 @@
 import java.util.Arrays;
 import java.util.Comparator;
 
-/**
- * An optimal packing algorithm that can either produce a pretty good approximation of an enclosing bin,
- * or an optimal one (given enough time).
- *
- * Based on the research paper: Optimal Rectangle Packing by Richard M. Korf
- *
- * @author Sergiu Marin
- *
- * TODO also deal with rotations and fixed bin height
- */
 public class OptimalRectanglePacking implements Solver {
-    private Rectangle enclosingBin;                         // the optimal enclosing rectangle
-    private int binWidth;                                   // the width of the current enclosing rectangle
-    private int binHeight;                                  // the height of the current enclosing rectangle
-    private Rectangle[] rectangles;                         // the (global) list of rectangles
-    private boolean anytimeSolution;                        // wheter to generate an anytime or iterative solution
-    private int fixedHeight;                                // whether the height of the enclosing bin is fixed or not
-    private boolean rotationsAllowed;                       // whether rotations are allowed or not
-    private int[][] placement;                              // matrix in which rectangle positions are stored
+    // array in which we save the optimal placement of rectangles
+    private Rectangle[] optimalRectanglePlacement;
 
-    public OptimalRectanglePacking() {}
+    private Rectangle optimalEnclosingRectangle;
 
-    public OptimalRectanglePacking(boolean anytimeSolution) {
-        this.anytimeSolution = anytimeSolution;
-    }
+    private int binWidth;               // the current width of the enclosing rectangle
+    private int binHeight;              // the current height of the enclosing rectangle
 
-    public OptimalRectanglePacking(int fixedHeight, boolean rotationsAllowed) {
-        this.fixedHeight = fixedHeight;
-        this.rotationsAllowed = rotationsAllowed;
-    }
+    private boolean solution;           // true == anytime solution, false == iterative solution
 
-    public OptimalRectanglePacking(boolean anytimeSolution, int fixedHeight, boolean rotationsAllowed) {
-        this.anytimeSolution = anytimeSolution;
-        this.fixedHeight = fixedHeight;
-        this.rotationsAllowed = rotationsAllowed;
-    }
+    private int[][] placementMatrix;    // matrix in which rectangle positions are stored (TODO transform in boolean)
 
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
-        this.rectangles = new Rectangle[rectangles.length];
-        for (int i = 0; i < this.rectangles.length; i++) {
-            this.rectangles[i] = new Rectangle(rectangles[i]);
+        this.optimalRectanglePlacement = new Rectangle[rectangles.length];
+        for (int i = 0; i < rectangles.length; i++) {
+            this.optimalRectanglePlacement[i] = new Rectangle(rectangles[i]);
         }
 
-        init();
+        this.optimalEnclosingRectangle = new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1);
 
-        return anytimeSolution ?
-                generateAnytimeSolution(this.rectangles) :
-                generateIterativeSolution(this.rectangles);
-    }
+        this.solution = true;
 
-    /**
-     * Initialization function.
-     */
-    private void init() {
-        this.enclosingBin = new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1);
+        this.binWidth = 1000;
+        this.binHeight = 1000;
 
-        // we can either generate a rectangle through an anytime solution (true) or through
-        // an iterative solution (false)
-        this.anytimeSolution = true;
-
-        this.placement = new int[1000][1000];
-        for (int i = 0; i < this.placement.length; i++) {
-            for (int j = 0; j < this.placement[i].length; j++) {
-                this.placement[i][j] = -1; // no rectangles placed initially
+        this.placementMatrix = new int[this.binHeight][this.binWidth];
+        for (int i = 0; i < this.binHeight; i++) {
+            for (int j = 0; j < this.binWidth; j++) {
+                this.placementMatrix[i][j] = -1;
             }
         }
 
-        this.binWidth = this.placement[0].length;
-        this.binHeight = this.placement.length;
+        if (solution) anytimeSolution(rectangles);
+        else iterativeSolution(rectangles);
+
+        return optimalRectanglePlacement;
     }
 
     /**
@@ -78,9 +46,9 @@ public class OptimalRectanglePacking implements Solver {
      * Can be stopped at anytime to get a pretty good enclosing bin.
      *
      * @param rectangles the given array of rectangles
-     * @return the list of rectangles with their (x, y) coordinates updated.
+     * @modifies the {@code optimalRectanglePlacement} array by updating the (x, y) coordinates of the rectangles
      */
-    private Rectangle[] generateAnytimeSolution(Rectangle[] rectangles) {
+    private void anytimeSolution(Rectangle[] rectangles) {
         // sort the rectangles by height (descending)
         Arrays.sort(rectangles, new Comparator<Rectangle>() {
             @Override
@@ -95,42 +63,47 @@ public class OptimalRectanglePacking implements Solver {
         // greedily place the rectangles in order to determine an initial width for the enclosing bin
         initialGreedyPlacement(rectangles);
 
-        // determine the maximum width of the set of rectangles
+        // determine the width of the widest rectangle
         int maxWidth = Integer.MIN_VALUE;
         for (int i = 0; i < rectangles.length; i++) {
             maxWidth = Math.max(maxWidth, rectangles[i].width);
         }
 
-        int counter = 1;
         // find the best bounding box
         while (binWidth > maxWidth) {
             // clear the placement matrix
-            for (int i = 0; i < this.placement.length; i++) {
-                for (int j = 0; j < this.placement[i].length; j++) {
-                    this.placement[i][j] = -1;
+            for (int i = 0; i < this.placementMatrix.length; i++) {
+                for (int j = 0; j < this.placementMatrix[i].length; j++) {
+                    this.placementMatrix[i][j] = -1;
                 }
             }
 
-            // if feasibility tests passed
-            // TODO manage feasibility accordingly
-            if (!isFeasible(binWidth, binHeight, rectangles)) {
+            // determine infeasibility
+            boolean infeasible = false;
+
+            // the total area of the rectangles cannot exceed the area of the bounding rectangle
+            int totalArea = 0;
+            for (int i = 0; i < rectangles.length; i++) {
+                totalArea += rectangles[i].width * rectangles[i].height;
+            }
+
+            infeasible |= ((binWidth * binHeight) < totalArea);
+
+            // the bounding rectangle must be at least as wide as the widest rectangle
+            infeasible |= (binWidth < maxWidth);
+
+            // TODO also implement the third test for infeasibility
+
+            // now call the containment algorithm and see if we can fit the rectangles in the current bin
+            infeasible |= (!containmentAlgorithm(binWidth, binHeight, rectangles));
+
+            // now check if the solution is infeasible
+            if (infeasible) {
                 binHeight++;
             } else {
                 binWidth--;
             }
         }
-
-        return new Rectangle[0];
-    }
-
-    /**
-     * Generate a first optimal solution.
-     *
-     * @param rectangles the given array of rectangles
-     * @return the list of rectangles with their (x, y) coordinates updated, placed in an optimal packing rectangle
-     */
-    private Rectangle[] generateIterativeSolution(Rectangle[] rectangles) {
-        return new Rectangle[0];
     }
 
     /**
@@ -148,8 +121,8 @@ public class OptimalRectanglePacking implements Solver {
             bestY = Integer.MIN_VALUE;
             for (int y = binHeight - 1; y >= 0; y--) {
                 for (int x = 0; x < binWidth; x++) {
-                    if (placement[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
-                        x += rectangles[placement[y][x]].width - 1;
+                    if (placementMatrix[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
+                        x += rectangles[placementMatrix[y][x]].width - 1;
                         continue;
                     }
                     // check if we have enough space to place it
@@ -172,11 +145,12 @@ public class OptimalRectanglePacking implements Solver {
             width = Math.max(width, rectangles[i].x + rectangles[i].width);
         }
 
+        // set an initial value for the enclosing rectangle width
         binWidth = width;
 
-        // store the height and widht as the best solution found so far
-        this.enclosingBin.width = binWidth;
-        this.enclosingBin.height = binHeight;
+        // store the height and width as the best solution found so far
+        this.optimalEnclosingRectangle.width = binWidth;
+        this.optimalEnclosingRectangle.height = binHeight;
     }
 
     /**
@@ -194,13 +168,13 @@ public class OptimalRectanglePacking implements Solver {
         }
 
         for (int i = y; i < y + rectangle.height; i++) {
-            if (placement[i][x] >= 0 || placement[i][x + rectangle.width - 1] >= 0) {
+            if (placementMatrix[i][x] >= 0 || placementMatrix[i][x + rectangle.width - 1] >= 0) {
                 return false;
             }
         }
 
         for (int j = x; j < x + rectangle.width; j++) {
-            if (placement[y][j] >= 0 || placement[y + rectangle.height - 1][j] >= 0) {
+            if (placementMatrix[y][j] >= 0 || placementMatrix[y + rectangle.height - 1][j] >= 0) {
                 return false;
             }
         }
@@ -219,73 +193,32 @@ public class OptimalRectanglePacking implements Solver {
     private void placeRectangle(int x, int y, Rectangle rectangle) {
         for (int i = y; i < y + rectangle.height; i++) {
             for (int j = x; j < x + rectangle.width; j++) {
-                placement[i][j] = rectangle.index;
+                placementMatrix[i][j] = rectangle.index;
             }
         }
 
+        // array x coordinate = euclidean x coordinate
         rectangle.x = x;
-        rectangle.y = y;
+
+        // array y coordinate = flipped euclidean y coordinate => transform it to euclidean
+        // the array y coordinate starts from the top, not the bottom
+        rectangle.y = binHeight - (y + rectangle.height);
     }
 
     /**
-     * Unplace the rectangle at (x, y), by marking the space occupied by it with -1
+     * Clear the rectangle at (x, y), by marking the space occupied by it with -1
      * in the placement matrix.
      *
      * @param x the x coordinate
      * @param y the y coordinate
-     * @param rectangle the rectangle to be unplaced
+     * @param rectangle the rectangle to be cleared
      */
-    private void unplaceRectangle(int x, int y, Rectangle rectangle) {
+    private void clearRectangle(int x, int y, Rectangle rectangle) {
         for (int i = y; i < y + rectangle.height; i++) {
             for (int j = x; j < x + rectangle.width; j++) {
-                placement[i][j] = 0;
+                placementMatrix[i][j] = -1;
             }
         }
-    }
-
-    /**
-     * Determine if a bounding box of a certain width and height constitutes a feasible solution for an array of
-     * rectangles by calling the containment algorithm that checks whether it is possible to place the given rectangles
-     * in a bounding box of fixed dimensions.
-     *
-     * To determine feasibility - call the containment algorithm.
-     * To determine infeasibility - the 3 tests are explained inside the function.
-     *
-     * If all the solution passes all infeasibility tests, the containment algorithm is called.
-     *
-     * @param width the width of the bounding box
-     * @param height the height of the bounding box
-     * @param rectangles the given list of rectangles
-     * @return true if the bounding box constitutes a feasible solution; false otherwise
-     */
-    private boolean isFeasible(int width, int height, Rectangle[] rectangles) {
-        return isFeasible(width, height, rectangles, 0);
-    }
-
-    private boolean isFeasible(int width, int height, Rectangle[] rectangles, int index) {
-        if (index == rectangles.length) {
-            print();
-            return true;
-        }
-
-        for (int y = height - 1; y >= 0; y--) {
-            for (int x = 0; x < width; x++) {
-                if (placement[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
-                    x += rectangles[placement[y][x]].width - 1;
-                    continue;
-                }
-                // check if we have enough space to place it
-                if (canPlaceAt(x, y, rectangles[index])) {
-                    placeRectangle(x, y, rectangles[index]);
-                    if (isFeasible(width, height, rectangles, index + 1)) {
-                        return true;
-                    }
-                    unplaceRectangle(x, y, rectangles[index]);
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -297,41 +230,90 @@ public class OptimalRectanglePacking implements Solver {
      * @param rectangles the given list of rectangles
      * @return true if the problem can be solved; false otherwise
      */
-    public boolean containmentProblem(int width, int height, Rectangle[] rectangles) {
+    private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles) {
+        return containmentAlgorithm(width, height, rectangles, 0);
+    }
+
+    private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles, int index) {
+        if (index == rectangles.length) { // a solution of packing the rectangles into the bin has been found
+            if (binWidth * binHeight < optimalEnclosingRectangle.width * optimalEnclosingRectangle.height) {
+                optimalEnclosingRectangle.width = binWidth;
+                optimalEnclosingRectangle.height = binHeight;
+
+                // update the optimal solution
+                for (int i = 0; i < optimalRectanglePlacement.length; i++) {
+                    optimalRectanglePlacement[i].x = rectangles[i].x;
+                    optimalRectanglePlacement[i].y = rectangles[i].y;
+                }
+            }
+            return true;
+        }
+
+        for (int y = height - 1; y >= 0; y--) {
+            for (int x = 0; x < width; x++) {
+                if (placementMatrix[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
+                    x += rectangles[placementMatrix[y][x]].width - 1;
+                    continue;
+                }
+
+                // check if we have enough space to place it
+                if (canPlaceAt(x, y, rectangles[index])) {
+                    placeRectangle(x, y, rectangles[index]);
+                    if (containmentAlgorithm(width, height, rectangles, index + 1)) {
+                        return true;
+                    }
+                    clearRectangle(x, y, rectangles[index]);
+                }
+            }
+        }
+
         return false;
     }
 
-    public Rectangle getEnclosingBin() { return enclosingBin; }
+    private void iterativeSolution(Rectangle[] rectangles) {
 
-    /* ------------------------------------------------- DEBUGGING ------------------------------------------------- */
+    }
 
-    private void print() {
-//        for (int i = 0; i < rectangles.length; i++) {
-//            System.out.println("rectangle " + rectangles[i].index +
-//                    " (x, y) = " + rectangles[i].x + " " + rectangles[i].y);
-//        }
+    private void print(Rectangle[] rectangles) {
+        for (int i = 0; i < rectangles.length; i++) {
+            System.out.println("rectangle " + rectangles[i].index +
+                    " (x, y) = " + rectangles[i].x + " " + rectangles[i].y);
+        }
+        System.out.println();
         for (int i = 0; i < binHeight; i++) {
             for (int j = 0; j < binWidth; j++) {
-                if (placement[i][j] == -1) System.out.print(".");
-                else System.out.print(placement[i][j]);
+                if (placementMatrix[i][j] == -1) System.out.print(".");
+                else System.out.print(placementMatrix[i][j]);
             }
             System.out.println();
             System.out.flush();
         }
+        System.out.println(binHeight * binWidth);
+        System.out.println("bin width = " + this.binWidth);
+        System.out.println("bin height = " + this.binHeight);
         System.out.println();
-//        System.out.println("bin width = " + this.binWidth);
-//        System.out.println("bin height = " + this.binHeight);
         System.out.flush();
     }
 
     public static void main(String[] args) {
         OptimalRectanglePacking opt = new OptimalRectanglePacking();
-        Rectangle[] test = new Rectangle[5];
-        test[0] = new Rectangle(60, 60, 0);
-        test[1] = new Rectangle(40, 40, 1);
-        test[2] = new Rectangle(20, 20, 2);
-        test[3] = new Rectangle(30, 40, 3);
-        test[4] = new Rectangle(50, 60, 4);
-        opt.solver(test);
+        Rectangle[] test = new Rectangle[6];
+        test[0] = new Rectangle(12, 8, 0);
+        test[1] = new Rectangle(10, 9, 1);
+        test[2] = new Rectangle(8, 12, 2);
+        test[3] = new Rectangle(16, 3, 3);
+        test[4] = new Rectangle(4, 16, 4);
+        test[5] = new Rectangle(10, 6, 5);
+//        Rectangle[] test = new Rectangle[3];
+//        test[0] = new Rectangle(4, 13, 0);
+//        test[1] = new Rectangle(4, 8, 1);
+//        test[2] = new Rectangle(7, 1, 2);
+        Rectangle[] optimal = opt.solver(test);
+        System.out.println("OPTIMAL PLACEMENT");
+        for (int i = 0; i < optimal.length; i++) {
+            System.out.println(optimal[i].x + " " + optimal[i].y);
+        }
+        System.out.println();
+        opt.print(optimal);
     }
 }

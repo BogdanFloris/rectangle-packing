@@ -1,6 +1,5 @@
 import java.io.*;
 import java.text.DecimalFormat;
-import java.util.Date;
 
 public class PackingSolver {
     /** CONSTANTS */
@@ -89,6 +88,7 @@ public class PackingSolver {
         debug.println("height: " + (height == 0 ? "free" : "fixed"));
 
         long startTime = System.nanoTime();
+
         solver = new BinaryTreeBinPacking(rotations, height);
 
         Rectangle[] result = solver.solver(rectangles);
@@ -116,7 +116,7 @@ public class PackingSolver {
             // check if the indices are in the correct order
             // i.e. the rectangles are displayed in the same order
             // as they appear in the input
-            int index = 1;
+            int index = 0;
             for (Rectangle rectangle : result) {
                 assert(rectangle.index == index);
                 index++;

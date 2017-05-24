@@ -1,11 +1,4 @@
-<<<<<<< HEAD
-test file: src/tests/canvas_testcases/10000_01_h300_rn.txt
-rotations: not allowed
-height: fixed
-running time: 0.08485763 seconds
-=======
-test file: src/tests/test1.in
+test file: src/tests/canvas_testcases/03_02_hf_rn.txt
 rotations: not allowed
 height: free
-running time: 64.61401548 seconds
->>>>>>> 4f35cacc3dd0d2e27816422657a6b6c1d6743db2
+running time: 0.05889441 seconds

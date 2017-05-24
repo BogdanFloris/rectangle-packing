@@ -236,9 +236,6 @@ public class OptimalRectanglePacking implements Solver {
 
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles, int index) {
         if (index == rectangles.length) { // a solution of packing the rectangles into the bin has been found
-
-            print(rectangles);
-
             if (binWidth * binHeight < optimalEnclosingRectangle.width * optimalEnclosingRectangle.height) {
                 optimalEnclosingRectangle.width = binWidth;
                 optimalEnclosingRectangle.height = binHeight;

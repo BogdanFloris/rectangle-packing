@@ -43,6 +43,18 @@ public class Rectangle {
         this.fit = other.fit;
     }
 
+    public void rotate() {
+        int temp = this.width;
+        this.width = this.height;
+        this.height = temp;
+        if (!rotated) {
+            rotated = true;
+        }
+        else {
+            rotated = false;
+        }
+    }
+
     @Override
     public String toString() {
         return width + " " + height;

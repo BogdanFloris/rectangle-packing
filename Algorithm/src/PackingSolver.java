@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/Random_48077.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/10000_01_h300_rn.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -89,7 +89,7 @@ public class PackingSolver {
         debug.println("height: " + (height == 0 ? "free" : "fixed"));
 
         long startTime = System.nanoTime();
-        solver = new BinaryTreeBinPacking();
+        solver = new BinaryTreeBinPacking(rotations, height);
 
         Rectangle[] result = solver.solver(rectangles);
 

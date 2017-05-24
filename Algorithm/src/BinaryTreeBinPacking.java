@@ -22,7 +22,9 @@ import java.util.Comparator;
  */
 public class BinaryTreeBinPacking implements Solver {
 
-    private Node root;          // the root of the binary tree
+    private Node root;                  // the root of the binary tree
+    private boolean rotations;          // if rotations are allowed
+    private int fixedHeight;            // the fixed height
 
     public enum SortingHeuristic {
         WIDTH,      // sort by descending width
@@ -35,32 +37,73 @@ public class BinaryTreeBinPacking implements Solver {
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         // sort the rectangles
-        sort(rectangles, SortingHeuristic.HEIGHT);
+        sort(rectangles, SortingHeuristic.WIDTH);
 
         // initialize the root with the width and the height of the first rectangle
         init(rectangles[0].width, rectangles[0].height);
 
         // arrange the rectangles
-        for (int i = 0; i < rectangles.length; i++) {
-            Node node = findNode(this.root, rectangles[i].width, rectangles[i].height);
+        for (Rectangle rectangle : rectangles) {
+            Node node = findNode(this.root, rectangle.width, rectangle.height);
             if (node != null) {
-                rectangles[i].fit = splitNode(node, rectangles[i].width, rectangles[i].height);
+                rectangle.fit = splitNode(node, rectangle.width, rectangle.height);
+            }
+            else if (rotations) {
+                rectangle.rotate();
+                node = findNode(this.root, rectangle.width, rectangle.height);
+                if (node != null) {
+                    rectangle.fit = splitNode(node, rectangle.width, rectangle.height);
+                }
+                else {
+                    /*int area1 = whereToGrow(rectangle.width, rectangle.height);
+                    int area2 = whereToGrow(rectangle.height, rectangle.width);
+                    if (area2 > area1) {
+                        rectangle.rotate();
+                    }*/
+                    rectangle.fit = growNode(rectangle.width, rectangle.height);
+                    if (rectangle.fit == null) {
+                        rectangle.rotate();
+                        rectangle.fit = growNode(rectangle.width, rectangle.height);
+                    }
+                }
             }
             else {
-                rectangles[i].fit = growNode(rectangles[i].width, rectangles[i].height);
+                rectangle.fit = growNode(rectangle.width, rectangle.height);
             }
         }
 
         Rectangle[] placement = new Rectangle[rectangles.length];
         for (int i = 0; i < rectangles.length; i++) {
             placement[rectangles[i].index] = new Rectangle(rectangles[i].fit.x, rectangles[i].fit.y);
+            if (rectangles[i].rotated) {
+                placement[rectangles[i].index].rotated = true;
+            }
         }
 
         return placement;
     }
 
+    /**
+     * Initializes the root of the Binary Tree
+     *
+     * @param width of the initial root
+     * @param height of the initial root
+     */
     private void init(int width, int height) {
-        root = new Node(0, 0, width, height);
+        if (fixedHeight == 0) {
+            root = new Node(0, 0, width, height);
+        }
+        else {
+            root = new Node(0, 0, width, this.fixedHeight);
+        }
+    }
+
+    /**
+     *  Constructor
+     */
+    public BinaryTreeBinPacking(boolean rotations, int fixedHeight) {
+        this.rotations = rotations;
+        this.fixedHeight = fixedHeight;
     }
 
     /**
@@ -112,13 +155,23 @@ public class BinaryTreeBinPacking implements Solver {
      * @return the node where the rectangle is placed
      */
     private Node growNode(int width, int height) {
-        boolean canGrowDown = (width <= this.root.width);
+        //TODO: try comparing the areas
         boolean canGrowRight = (height <= this.root.height);
+        boolean canGrowDown = (width <= this.root.width);
 
         // attempt to keep square-ish by growing right when height is much greater than width
         boolean shouldGrowRight = canGrowRight && (this.root.height >= (this.root.width + width));
-        // attempt to keep square-ish by growing down  when width  is much greater than height
+        // attempt to keep square-ish by growing down when width  is much greater than height
         boolean shouldGrowDown = canGrowDown && (this.root.width >= (this.root.height + height));
+
+        if (fixedHeight > 0) {
+            if (canGrowRight) {
+                return growRight(width, height);
+            }
+            else {
+                return null;
+            }
+        }
 
         if (shouldGrowRight) {
             return growRight(width, height);
@@ -133,8 +186,8 @@ public class BinaryTreeBinPacking implements Solver {
             return growDown(width, height);
         }
         else {
-            System.err.println("Invalid enclosing");
-            return null; // this doesn't happen if input is sorted in descending order
+            //System.err.println("Invalid enclosing");
+            return null; // this doesn't happen if input is sorted in decreasing order
         }
     }
 
@@ -173,6 +226,38 @@ public class BinaryTreeBinPacking implements Solver {
         }
         else {
             return null;
+        }
+    }
+
+    /**
+     * Returns the area that is formed by growing right or down
+     *
+     * @param width of the rectangle
+     * @param height of the rectangle
+     */
+    private int whereToGrow(int width, int height) {
+        boolean canGrowRight = (width <= this.root.height);
+        boolean canGrowDown = (height <= this.root.width);
+
+        // attempt to keep square-ish by growing right when height is much greater than width
+        boolean shouldGrowRight = canGrowRight && (this.root.height >= (this.root.width + width));
+        // attempt to keep square-ish by growing down when width  is much greater than height
+        boolean shouldGrowDown = canGrowDown && (this.root.width >= (this.root.height + height));
+
+        if (shouldGrowRight) {
+            return (this.root.height * (this.root.width + width));
+        }
+        else if (shouldGrowDown) {
+            return (this.root.width * (this.root.height + height));
+        }
+        else if (canGrowRight) {
+            return (this.root.height * (this.root.width + width));
+        }
+        else if (canGrowDown) {
+            return (this.root.width * (this.root.height + height));
+        }
+        else {
+            return Integer.MAX_VALUE;
         }
     }
 

@@ -236,6 +236,9 @@ public class OptimalRectanglePacking implements Solver {
 
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles, int index) {
         if (index == rectangles.length) { // a solution of packing the rectangles into the bin has been found
+
+            print(rectangles);
+
             if (binWidth * binHeight < optimalEnclosingRectangle.width * optimalEnclosingRectangle.height) {
                 optimalEnclosingRectangle.width = binWidth;
                 optimalEnclosingRectangle.height = binHeight;
@@ -297,17 +300,17 @@ public class OptimalRectanglePacking implements Solver {
 
     public static void main(String[] args) {
         OptimalRectanglePacking opt = new OptimalRectanglePacking();
-        Rectangle[] test = new Rectangle[6];
-        test[0] = new Rectangle(12, 8, 0);
-        test[1] = new Rectangle(10, 9, 1);
-        test[2] = new Rectangle(8, 12, 2);
-        test[3] = new Rectangle(16, 3, 3);
-        test[4] = new Rectangle(4, 16, 4);
-        test[5] = new Rectangle(10, 6, 5);
-//        Rectangle[] test = new Rectangle[3];
-//        test[0] = new Rectangle(4, 13, 0);
-//        test[1] = new Rectangle(4, 8, 1);
-//        test[2] = new Rectangle(7, 1, 2);
+//        Rectangle[] test = new Rectangle[6];
+//        test[0] = new Rectangle(12, 8, 0);
+//        test[1] = new Rectangle(10, 9, 1);
+//        test[2] = new Rectangle(8, 12, 2);
+//        test[3] = new Rectangle(16, 3, 3);
+//        test[4] = new Rectangle(4, 16, 4);
+//        test[5] = new Rectangle(10, 6, 5);
+        Rectangle[] test = new Rectangle[3];
+        test[0] = new Rectangle(4, 13, 0);
+        test[1] = new Rectangle(4, 8, 1);
+        test[2] = new Rectangle(7, 1, 2);
         Rectangle[] optimal = opt.solver(test);
         System.out.println("OPTIMAL PLACEMENT");
         for (int i = 0; i < optimal.length; i++) {

@@ -37,7 +37,7 @@ public class BinaryTreeBinPacking implements Solver {
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         // sort the rectangles
-        sort(rectangles, SortingHeuristic.WIDTH);
+        sort(rectangles, SortingHeuristic.HEIGHT);
 
         // initialize the root with the width and the height of the first rectangle
         init(rectangles[0].width, rectangles[0].height);
@@ -74,7 +74,8 @@ public class BinaryTreeBinPacking implements Solver {
 
         Rectangle[] placement = new Rectangle[rectangles.length];
         for (int i = 0; i < rectangles.length; i++) {
-            placement[rectangles[i].index] = new Rectangle(rectangles[i].fit.x, rectangles[i].fit.y);
+            placement[rectangles[i].index] = new Rectangle(rectangles[i].fit.x,
+                    this.root.height - (rectangles[i].fit.y + rectangles[i].height));
             if (rectangles[i].rotated) {
                 placement[rectangles[i].index].rotated = true;
             }
@@ -155,7 +156,6 @@ public class BinaryTreeBinPacking implements Solver {
      * @return the node where the rectangle is placed
      */
     private Node growNode(int width, int height) {
-        //TODO: try comparing the areas
         boolean canGrowRight = (height <= this.root.height);
         boolean canGrowDown = (width <= this.root.width);
 
@@ -186,7 +186,6 @@ public class BinaryTreeBinPacking implements Solver {
             return growDown(width, height);
         }
         else {
-            //System.err.println("Invalid enclosing");
             return null; // this doesn't happen if input is sorted in decreasing order
         }
     }

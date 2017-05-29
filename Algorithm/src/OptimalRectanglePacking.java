@@ -38,7 +38,19 @@ public class OptimalRectanglePacking implements Solver {
         if (solution) anytimeSolution(rectangles);
         else iterativeSolution(rectangles);
 
-        return optimalRectanglePlacement;
+        Rectangle[] answer = new Rectangle[optimalRectanglePlacement.length];
+        for (int i = 0; i < answer.length; i++) {
+            System.out.println(optimalRectanglePlacement[i].index);
+            int index = optimalRectanglePlacement[i].index;
+
+            answer[index] = new Rectangle();
+            answer[index].x = optimalRectanglePlacement[i].x;
+            answer[index].y = optimalRectanglePlacement[i].y;
+            answer[index].width = optimalRectanglePlacement[i].width;
+            answer[index].height = optimalRectanglePlacement[i].height;
+        }
+
+        return answer;
     }
 
     /**
@@ -236,18 +248,23 @@ public class OptimalRectanglePacking implements Solver {
 
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles, int index) {
         if (index == rectangles.length) { // a solution of packing the rectangles into the bin has been found
+
+            print(rectangles);
+
             if (binWidth * binHeight < optimalEnclosingRectangle.width * optimalEnclosingRectangle.height) {
                 optimalEnclosingRectangle.width = binWidth;
                 optimalEnclosingRectangle.height = binHeight;
 
                 // update the optimal solution
                 for (int i = 0; i < optimalRectanglePlacement.length; i++) {
+                    optimalRectanglePlacement[i].index = rectangles[i].index;
                     optimalRectanglePlacement[i].x = rectangles[i].x;
                     optimalRectanglePlacement[i].y = rectangles[i].y;
                 }
             }
             return true;
         }
+
 
         for (int y = height - 1; y >= 0; y--) {
             for (int x = 0; x < width; x++) {

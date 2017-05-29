@@ -1,4 +1,4 @@
-test file: src/tests/canvas_testcases/03_02_hf_rn.txt
+test file: src/tests/test1.in
 rotations: not allowed
 height: free
-running time: 0.05357469 seconds
+running time: 60.83582741 seconds

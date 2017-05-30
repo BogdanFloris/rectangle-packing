@@ -1,6 +1,13 @@
 import java.util.Arrays;
 import java.util.Comparator;
 
+/**
+ * TODO add pruning
+ * TODO add support for fixed height
+ * TODO add support for rotations
+ * TODO code up the iterative algorithm
+ */
+
 public class OptimalRectanglePacking implements Solver {
     // array in which we save the optimal placement of rectangles
     private Rectangle[] optimalRectanglePlacement;
@@ -14,8 +21,17 @@ public class OptimalRectanglePacking implements Solver {
 
     private int[][] placementMatrix;    // matrix in which rectangle positions are stored (TODO transform in boolean)
 
-    @Override
-    public Rectangle[] solver(Rectangle[] rectangles) {
+    private boolean rotationsAllowed;       // whether rotations are allowed or not
+    private int fixedHeight;                // 0 if height is not fixed; height's actual value otherwise
+
+    public OptimalRectanglePacking() {}
+
+    public OptimalRectanglePacking(boolean rotations, int fixedHeight) {
+        this.rotationsAllowed = rotations;
+        this.fixedHeight = fixedHeight;
+    }
+
+    private void init(Rectangle[] rectangles) {
         this.optimalRectanglePlacement = new Rectangle[rectangles.length];
         for (int i = 0; i < rectangles.length; i++) {
             this.optimalRectanglePlacement[i] = new Rectangle(rectangles[i]);
@@ -34,13 +50,98 @@ public class OptimalRectanglePacking implements Solver {
                 this.placementMatrix[i][j] = -1;
             }
         }
+    }
 
-        if (solution) anytimeSolution(rectangles);
-        else iterativeSolution(rectangles);
+    @Override
+    public Rectangle[] solver(Rectangle[] rectangles) {
+        init(rectangles);
+
+        if (solution) {
+            Rectangle[] rotatedOptimal = new Rectangle[rectangles.length];
+            int optimalHeight = Integer.MAX_VALUE;
+            int optimalWidth = Integer.MAX_VALUE;
+
+            if (rotationsAllowed) {
+                for (int comb = 0; comb < (1 << rectangles.length); comb++) {
+                    // make a new copy each time
+                    Rectangle[] onetime = new Rectangle[rectangles.length];
+                    for (int i = 0; i < onetime.length; i++) {
+                        onetime[i] = new Rectangle();
+                        onetime[i].x = rectangles[i].x;
+                        onetime[i].y = rectangles[i].y;
+                        onetime[i].width = rectangles[i].width;
+                        onetime[i].height = rectangles[i].height;
+                        onetime[i].index = rectangles[i].index;
+                        onetime[i].rotated = false;
+                    }
+
+                    init(onetime);
+
+                    for (int bit = 0; bit < rectangles.length; bit++) {
+                        if ((comb & bit) > 0) {
+                            // rotate the current rectangle at index {@code bit}
+                            int temp = onetime[bit].height;
+                            onetime[bit].height = onetime[bit].width;
+                            onetime[bit].width = temp;
+                            onetime[bit].rotated = true;
+                        }
+                    }
+
+                    // run the anytime algorithm on the current rectangle configuration
+                    anytimeSolution(onetime);
+
+                    int comp = Integer.MAX_VALUE;
+                    if (optimalHeight < Integer.MAX_VALUE) {
+                        comp = optimalHeight * optimalWidth;
+                    }
+
+                    if (optimalEnclosingRectangle.width * optimalEnclosingRectangle.height < comp) {
+                        optimalHeight = optimalEnclosingRectangle.height;
+                        optimalWidth = optimalEnclosingRectangle.width;
+
+                        for (int i = 0; i < rotatedOptimal.length; i++) {
+                            rotatedOptimal[i] = new Rectangle();
+                            rotatedOptimal[i].x = onetime[i].x;
+                            rotatedOptimal[i].y = onetime[i].y;
+                            rotatedOptimal[i].width = onetime[i].width;
+                            rotatedOptimal[i].height = onetime[i].height;
+                            rotatedOptimal[i].index = onetime[i].index;
+                            rotatedOptimal[i].rotated = onetime[i].rotated;
+                        }
+                    }
+
+                    System.out.println("current width: " + optimalEnclosingRectangle.width);
+                    System.out.println("current height: " + optimalEnclosingRectangle.height);
+                    System.out.println("current area: " +
+                            optimalEnclosingRectangle.width * optimalEnclosingRectangle.height);
+                    System.out.println();
+                }
+
+                // update with the best solution
+
+                optimalEnclosingRectangle.width = optimalWidth;
+                optimalEnclosingRectangle.height = optimalHeight;
+
+                optimalRectanglePlacement = new Rectangle[rotatedOptimal.length];
+
+                for (int i = 0; i < optimalRectanglePlacement.length; i++) {
+                    optimalRectanglePlacement[i] = new Rectangle();
+                    optimalRectanglePlacement[i].x = rotatedOptimal[i].x;
+                    optimalRectanglePlacement[i].y = rotatedOptimal[i].y;
+                    optimalRectanglePlacement[i].width = rotatedOptimal[i].width;
+                    optimalRectanglePlacement[i].height = rotatedOptimal[i].height;
+                    optimalRectanglePlacement[i].index = rotatedOptimal[i].index;
+                    optimalRectanglePlacement[i].rotated = rotatedOptimal[i].rotated;
+                }
+            } else {
+                anytimeSolution(rectangles);
+            }
+        } else {
+            iterativeSolution(rectangles);
+        }
 
         Rectangle[] answer = new Rectangle[optimalRectanglePlacement.length];
         for (int i = 0; i < answer.length; i++) {
-            System.out.println(optimalRectanglePlacement[i].index);
             int index = optimalRectanglePlacement[i].index;
 
             answer[index] = new Rectangle();
@@ -48,7 +149,13 @@ public class OptimalRectanglePacking implements Solver {
             answer[index].y = optimalRectanglePlacement[i].y;
             answer[index].width = optimalRectanglePlacement[i].width;
             answer[index].height = optimalRectanglePlacement[i].height;
+            answer[index].rotated = optimalRectanglePlacement[i].rotated;
         }
+
+        System.out.println("optimal width with rotations: " + optimalEnclosingRectangle.width);
+        System.out.println("optimal height with rotations: " + optimalEnclosingRectangle.height);
+        System.out.println("optimal area with rotations: " +
+                optimalEnclosingRectangle.width * optimalEnclosingRectangle.height);
 
         return answer;
     }
@@ -248,10 +355,13 @@ public class OptimalRectanglePacking implements Solver {
 
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles, int index) {
         if (index == rectangles.length) { // a solution of packing the rectangles into the bin has been found
+            int comp = Integer.MAX_VALUE;
 
-            print(rectangles);
+            if (optimalEnclosingRectangle.width < Integer.MAX_VALUE) {
+                comp = optimalEnclosingRectangle.width * optimalEnclosingRectangle.height;
+            }
 
-            if (binWidth * binHeight < optimalEnclosingRectangle.width * optimalEnclosingRectangle.height) {
+            if (binWidth * binHeight < comp) {
                 optimalEnclosingRectangle.width = binWidth;
                 optimalEnclosingRectangle.height = binHeight;
 
@@ -260,6 +370,9 @@ public class OptimalRectanglePacking implements Solver {
                     optimalRectanglePlacement[i].index = rectangles[i].index;
                     optimalRectanglePlacement[i].x = rectangles[i].x;
                     optimalRectanglePlacement[i].y = rectangles[i].y;
+                    optimalRectanglePlacement[i].width = rectangles[i].width;
+                    optimalRectanglePlacement[i].height = rectangles[i].height;
+                    optimalRectanglePlacement[i].rotated = rectangles[i].rotated;
                 }
             }
             return true;

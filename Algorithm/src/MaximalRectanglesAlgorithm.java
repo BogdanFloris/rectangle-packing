@@ -5,6 +5,10 @@ import java.util.Collections;
 import java.util.Comparator;
 
 /**
+ * TODO use Bogdan's algorithm to determine an initial size for the bin
+ */
+
+/**
  * Implementation of the Maximal Rectangles Algorithm.
  * Based on the research paper and code by Jukka Jylanki.
  *

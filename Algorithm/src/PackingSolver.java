@@ -8,7 +8,7 @@ import java.text.DecimalFormat;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_04_hf_ry.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/10_04_hf_rn.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -97,12 +97,15 @@ public class PackingSolver {
         if (n == 3) {
             solver = new OptimalRectanglePacking(rotations, height);
         } else if (n == 5) {
-            if (rotations) solver = new MaximalRectanglesAlgorithm(rotations, 0);
-            else solver = new OptimalRectanglePacking(false, height);
+//            if (rotations) solver = new MaximalRectanglesAlgorithm(rotations, 0);
+//            else solver = new OptimalRectanglePacking(false, height);
+            solver = new OptimalRectanglePacking(rotations, height);
         } else if (n == 10) {
-            solver = new MaximalRectanglesAlgorithm(rotations, height);
+            //solver = new MaximalRectanglesAlgorithm(rotations, height);
+            solver = new OptimalRectanglePacking();
         } else if (n == 25) {
-            solver = new MaximalRectanglesAlgorithm(rotations, height);
+           // solver = new MaximalRectanglesAlgorithm(rotations, height);
+            solver = new OptimalRectanglePacking();
         } else if (n == 10000) {
             solver = new BinaryTreeBinPacking(rotations, height);
         }

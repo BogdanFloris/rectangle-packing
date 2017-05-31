@@ -48,12 +48,8 @@ public class Rectangle {
         int temp = this.width;
         this.width = this.height;
         this.height = temp;
-        if (!rotated) {
-            rotated = true;
-        }
-        else {
-            rotated = false;
-        }
+
+        this.rotated = !this.rotated;
     }
 
     @Override

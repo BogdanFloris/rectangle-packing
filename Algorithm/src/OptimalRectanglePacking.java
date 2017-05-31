@@ -27,7 +27,37 @@ public class OptimalRectanglePacking implements Solver {
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         if (solution) {
-            return anytimeSolution(rectangles).first;
+            if (rotationsAllowed) {
+                int n = rectangles.length;
+
+                Rectangle optimalBinRotations = new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1);
+                Rectangle[] optimalSolutionRotations = null;
+
+                for (int combination = 0; combination < (1 << n); ++combination) {
+                    Rectangle[] arr = copyRectangles(rectangles);
+
+                    for (int bit = 0; bit < n; ++bit) {
+                        if ((combination & (1 << bit)) > 0) {
+                            arr[bit].rotate();
+                        }
+                    }
+
+                    Pair<Rectangle[], Rectangle> solution = anytimeSolution(arr);
+
+                    // check if this rotation combination is better
+                    if ((long) optimalBinRotations.width * (long) optimalBinRotations.height >
+                            (long) solution.second.width * (long) solution.second.height) {
+                        optimalSolutionRotations = copyRectangles(solution.first);
+
+                        optimalBinRotations.width = solution.second.width;
+                        optimalBinRotations.height = solution.second.height;
+                    }
+                }
+
+                return optimalSolutionRotations;
+            } else {
+                return anytimeSolution(rectangles).first;
+            }
         } else {
             return iterativeSolution(rectangles).first;
         }
@@ -133,6 +163,7 @@ public class OptimalRectanglePacking implements Solver {
                 }
             }
 
+            // DEBUG
             System.out.printf("considering: (w: %d; h: %d)\n", width, height);
             System.out.flush();
 

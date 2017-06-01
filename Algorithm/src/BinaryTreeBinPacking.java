@@ -31,13 +31,17 @@ public class BinaryTreeBinPacking implements Solver {
         HEIGHT,     // sort by descending height
         MAXSIDE,    // sort by the longer side first, then by the shorter side, descending
         AREA,       // sort by descending area
-        NONE,       // don't sort
     }
 
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         // sort the rectangles
-        sort(rectangles, SortingHeuristic.HEIGHT);
+        if (fixedHeight > 0) {
+            sort(rectangles, SortingHeuristic.MAXSIDE);
+        }
+        else {
+            sort(rectangles, SortingHeuristic.HEIGHT);
+        }
 
         // initialize the root with the width and the height of the first rectangle
         init(rectangles[0].width, rectangles[0].height);

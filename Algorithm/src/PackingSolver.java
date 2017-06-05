@@ -8,7 +8,7 @@ import java.text.DecimalFormat;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_04_hf_ry.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_03_h12_ry.txt";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -25,7 +25,7 @@ public class PackingSolver {
     private PrintWriter debug;                              // the standard error stream of the program
 
     // MAKE FALSE WHEN SUBMITTING ON MOMOTOR
-    private static final boolean IN_DEBUG = true;
+    private static final boolean IN_DEBUG = false;
 
     /**
      * solver method that provides the final algorithm.
@@ -97,15 +97,11 @@ public class PackingSolver {
         if (n == 3) {
             solver = new OptimalRectanglePacking(rotations, height);
         } else if (n == 5) {
-//            if (rotations) solver = new MaximalRectanglesAlgorithm(rotations, 0);
-//            else solver = new OptimalRectanglePacking(false, height);
             solver = new OptimalRectanglePacking(rotations, height);
         } else if (n == 10) {
-            //solver = new MaximalRectanglesAlgorithm(rotations, height);
-            solver = new OptimalRectanglePacking();
+            solver = new MaximalRectanglesAlgorithm(rotations, height);
         } else if (n == 25) {
-           // solver = new MaximalRectanglesAlgorithm(rotations, height);
-            solver = new OptimalRectanglePacking();
+            solver = new MaximalRectanglesAlgorithm(rotations, height);
         } else if (n == 10000) {
             solver = new BinaryTreeBinPacking(rotations, height);
         }

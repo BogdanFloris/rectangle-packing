@@ -1,4 +1,4 @@
-test file: src/tests/canvas_testcases/03_03_h12_ry.txt
-rotations: allowed
-height: fixed
-running time: 0.10187096 seconds
+test file: src/tests/canvas_testcases/25_03_hf_rn.txt
+rotations: not allowed
+height: free
+running time: 0.02322577 seconds

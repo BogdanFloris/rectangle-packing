@@ -3,7 +3,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 public class OptimalRectanglePacking implements Solver {
-    private final static int PLACEMENT_MATRIX_SIZE = 1234;
+    private final static int PLACEMENT_MATRIX_SIZE = 10000;
 
     private boolean solution;                       // true if anytime; false if iterative
     private boolean rotationsAllowed;

@@ -8,7 +8,8 @@ import java.text.DecimalFormat;
 
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_03_h12_ry.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/25_03_hf_rn.txt";         // standard stream input
+
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -94,6 +95,14 @@ public class PackingSolver {
 
         long startTime = System.nanoTime();
 
+        /**
+         * n == 3   - Optimal rectangle packing for all cases
+         *
+         * n == 5   - Optimal rectangle packing for all cases
+         *          - slower for free height and with rotations but finishes in under 1 minute
+         *
+         * n == 10  -
+         */
         if (n == 3) {
             solver = new OptimalRectanglePacking(rotations, height);
         } else if (n == 5) {
@@ -118,6 +127,8 @@ public class PackingSolver {
         //Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingBin();
         //debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
                 //+ "; height = " + enclosingRectangle.height);
+
+        assert(result != null);
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated

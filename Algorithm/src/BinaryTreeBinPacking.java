@@ -292,6 +292,8 @@ public class BinaryTreeBinPacking implements Solver {
             }
         });
     }
+
+    public Rectangle getEnclosingRectangle() { return new Rectangle(root.width, root.height, -1); }
 }
 
 class Node {

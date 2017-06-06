@@ -6,11 +6,13 @@ import java.text.DecimalFormat;
  * TODO (maybe) add some time measurements - i.e. if one algorithm takes too long use a faster one
  */
 
+// TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/test2.in";         // standard stream input
-    private static final String OUT_STD_FILE = "src/tests/out3.out";         // standard stream output
-    private static final String OUT_DEBUG_FILE = "src/tests/debug3.out";     // error    stream output
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_02_hf_rn.txt";         // standard stream input
+
+    private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
+    private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
     /** INSTANCE VARIABLES */
     private String      variant;                            // free or fixed
@@ -25,7 +27,7 @@ public class PackingSolver {
     private PrintWriter debug;                              // the standard error stream of the program
 
     // MAKE FALSE WHEN SUBMITTING ON MOMOTOR
-    private static final boolean IN_DEBUG = true;
+    private static final boolean IN_DEBUG = false;
 
     /**
      * solver method that provides the final algorithm.
@@ -94,23 +96,52 @@ public class PackingSolver {
 
         long startTime = System.nanoTime();
 
+        Rectangle[] result = null;
+
         if (n == 3) {
             solver = new OptimalRectanglePacking(rotations, height);
+            result = solver.solver(rectangles);
         } else if (n == 5) {
-//            if (rotations) solver = new MaximalRectanglesAlgorithm(rotations, 0);
-//            else solver = new OptimalRectanglePacking(false, height);
             solver = new OptimalRectanglePacking(rotations, height);
+            result = solver.solver(rectangles);
         } else if (n == 10) {
-            //solver = new MaximalRectanglesAlgorithm(rotations, height);
-            solver = new OptimalRectanglePacking();
+            solver = new MaximalRectanglesAlgorithm(rotations, height);
+            Rectangle[] result1 = solver.solver(rectangles);
+            int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                    ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+            solver = new BinaryTreeBinPacking(rotations, height);
+            Rectangle[] result2 = solver.solver(rectangles);
+            int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                    ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+            if (area1 < area2) {
+                result = result1;
+            } else {
+                result = result2;
+            }
         } else if (n == 25) {
-           // solver = new MaximalRectanglesAlgorithm(rotations, height);
-            solver = new OptimalRectanglePacking();
+            solver = new MaximalRectanglesAlgorithm(rotations, height);
+            Rectangle[] result1 = solver.solver(rectangles);
+            int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                    ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+            solver = new BinaryTreeBinPacking(rotations, height);
+            Rectangle[] result2 = solver.solver(rectangles);
+            int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                    ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+            if (area1 < area2) {
+                result = result1;
+            } else {
+                result = result2;
+            }
         } else if (n == 10000) {
             solver = new BinaryTreeBinPacking(rotations, height);
+            result = solver.solver(rectangles);
         }
 
-        Rectangle[] result = solver.solver(rectangles);
+        assert(result != null);
 
         long endTime = System.nanoTime();
 
@@ -122,6 +153,8 @@ public class PackingSolver {
         //Rectangle enclosingRectangle = ((MaximalRectanglesAlgorithm) (solver)).getEnclosingBin();
         //debug.println("enclosing rectangle dimensions: width = " + enclosingRectangle.width
                 //+ "; height = " + enclosingRectangle.height);
+
+        assert(result != null);
 
         // output the position of each rectangle
         // if required, also output whether the rectangle is rotated

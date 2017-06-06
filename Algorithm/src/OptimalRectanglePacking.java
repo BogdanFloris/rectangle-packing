@@ -11,6 +11,7 @@ public class OptimalRectanglePacking implements Solver {
     private int fixedHeight;                        // 0 if height is free; value of the fixed height otherwise
 
     private int[][] placementMatrix;                // matrix that holds the positions of rectangles
+    private int[] histogram;                        // array that will hold the histogram for pruning
 
     private HashMap<Integer, Integer> mapWidth;     // map each rectangle to its width using its index as the key
 
@@ -164,8 +165,8 @@ public class OptimalRectanglePacking implements Solver {
             }
 
             // DEBUG
-            System.out.printf("considering: (w: %d; h: %d)\n", width, height);
-            System.out.flush();
+//            System.out.printf("considering: (w: %d; h: %d)\n", width, height);
+//            System.out.flush();
 
             // determine infeasibility
             boolean infeasible = false;
@@ -180,7 +181,7 @@ public class OptimalRectanglePacking implements Solver {
 
             // now call the containment algorithm and see if we can fit the rectangles in the current bin
             infeasible |= (!containmentAlgorithm(width, height, arr, 0));
-
+            System.out.println(infeasible);
             if (infeasible) {
                 height++;
 
@@ -237,6 +238,11 @@ public class OptimalRectanglePacking implements Solver {
             return true;
         }
 
+        // Prune the current subtree if no solution can be found.
+        if (cumulativeWidthPruning(width, height, rectangles, index)) {
+            return false;
+        }
+
         for (int y = height - 1; y >= 0; y--) {
             for (int x = 0; x < width; x++) {
                 if (placementMatrix[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
@@ -247,6 +253,7 @@ public class OptimalRectanglePacking implements Solver {
                 // check if we have enough space to place it
                 if (canPlaceAt(x, y, rectangles[index], width, height)) {
                     placeRectangle(x, y, rectangles[index], width, height);
+
                     if (containmentAlgorithm(width, height, rectangles, index + 1)) {
                         return true;
                     }
@@ -255,6 +262,93 @@ public class OptimalRectanglePacking implements Solver {
             }
         }
 
+        return false;
+    }
+
+    /**
+     * A function that prunes any partial solution that cannot provide a valid solution by checking if
+     * the amount of free space that can accommodate rectangles with width w is larger than the cumulative area
+     * of those rectangles
+     *
+     * @param width the width of the enclosing bin
+     * @param height the height of the enclosing bin
+     * @param rectangles the given list of rectangles
+     * @param index the current index of the rectangle to be placed
+     * @return true if the subtree can be pruned; false otherwise
+     */
+    private boolean cumulativeWidthPruning(int width, int height, Rectangle[] rectangles, int index) {
+        // create the histogram containing the number of free cells that have a certain width.
+        histogram = new int[width];
+
+        // initialize the histogram
+        for (int i = 0; i < width; i++) {
+            histogram[i] = 0;
+        }
+
+        int widthCounter = 0; // count the width of the block of free cells.
+
+        // go through all the cells to find free ones
+        for (int y = height - 1; y >= 0; y--) {
+            for (int x = 0; x < width; x++) {
+                if (placementMatrix[y][x] >= 0) { // skip spaces that are already occupied by other rectangles
+                    x += mapWidth.get(placementMatrix[y][x]) - 1;
+                    if (widthCounter > 0) {
+                        histogram[widthCounter - 1] = histogram[widthCounter - 1] + widthCounter;
+                        widthCounter = 0;
+                    }
+                    continue;
+                }
+                widthCounter++;
+            }
+            // We ended a row
+            if (widthCounter > 0) {
+                histogram[widthCounter - 1] = histogram[widthCounter - 1] + widthCounter;
+                widthCounter = 0;
+            }
+        }
+
+        // now we go through all the remaining rectangles and update the histogram to see if we have enough space
+        for (int i = index; i < rectangles.length; i++) {
+            // go through the histogram and find free cells that can fit the rectangle
+            if (!updateHistogram(rectangles[i], width)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A function that finds using the histogram if a rectangle can be placed, if it can be placed the histogram
+     * is updated.
+     *
+     * @param rectangle the given rectangles
+     * @param width the width of the enclosing bin
+     * @return true if rectangle can be placed; false otherwise
+     */
+    private boolean updateHistogram(Rectangle rectangle, int width) {
+        int freeSpace = 0;
+        // count the the amount of free cells that have at least the width of the rectangle
+        for (int i = rectangle.width - 1; i < width; i++) {
+            freeSpace += histogram[i];
+        }
+
+        int rectangleArea = (rectangle.width * rectangle.height);
+        // if the rectangle fits update the histogram
+        if (freeSpace >= rectangleArea) {
+            for (int j = rectangle.width - 1; j < width; j++) {
+                // if there are no free cells of the current width dont even bother.
+                if (histogram[j] > 0) {
+                    if (histogram[j] >= rectangleArea) {
+                        histogram[j] = histogram[j] - rectangleArea;
+                        return true;
+                    } else {
+                        rectangleArea = rectangleArea - histogram[j];
+                        histogram[j] = 0;
+                    }
+                }
+            }
+        }
         return false;
     }
 

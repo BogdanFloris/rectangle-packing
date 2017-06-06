@@ -6,9 +6,10 @@ import java.text.DecimalFormat;
  * TODO (maybe) add some time measurements - i.e. if one algorithm takes too long use a faster one
  */
 
+// TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/25_03_hf_rn.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_02_hf_rn.txt";         // standard stream input
 
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
@@ -95,27 +96,52 @@ public class PackingSolver {
 
         long startTime = System.nanoTime();
 
-        /**
-         * n == 3   - Optimal rectangle packing for all cases
-         *
-         * n == 5   - Optimal rectangle packing for all cases
-         *          - slower for free height and with rotations but finishes in under 1 minute
-         *
-         * n == 10  -
-         */
+        Rectangle[] result = null;
+
         if (n == 3) {
             solver = new OptimalRectanglePacking(rotations, height);
+            result = solver.solver(rectangles);
         } else if (n == 5) {
             solver = new OptimalRectanglePacking(rotations, height);
+            result = solver.solver(rectangles);
         } else if (n == 10) {
             solver = new MaximalRectanglesAlgorithm(rotations, height);
+            Rectangle[] result1 = solver.solver(rectangles);
+            int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                    ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+            solver = new BinaryTreeBinPacking(rotations, height);
+            Rectangle[] result2 = solver.solver(rectangles);
+            int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                    ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+            if (area1 < area2) {
+                result = result1;
+            } else {
+                result = result2;
+            }
         } else if (n == 25) {
             solver = new MaximalRectanglesAlgorithm(rotations, height);
+            Rectangle[] result1 = solver.solver(rectangles);
+            int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                    ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+            solver = new BinaryTreeBinPacking(rotations, height);
+            Rectangle[] result2 = solver.solver(rectangles);
+            int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                    ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+            if (area1 < area2) {
+                result = result1;
+            } else {
+                result = result2;
+            }
         } else if (n == 10000) {
             solver = new BinaryTreeBinPacking(rotations, height);
+            result = solver.solver(rectangles);
         }
 
-        Rectangle[] result = solver.solver(rectangles);
+        assert(result != null);
 
         long endTime = System.nanoTime();
 

@@ -41,7 +41,7 @@ public class BinaryTreePackingAllHeuristics implements Solver {
         int wastedSpaceHeight = (((BinaryTreeBinPacking) solverHeight).getEnclosingRectangle().width *
                 ((BinaryTreeBinPacking) solverHeight).getEnclosingRectangle().height) - areaRects;
 
-        // compute the placement for WIDTH heuristic
+        // compute the placement for MAXSIDE heuristic
         Solver solverMaxside = new BinaryTreeBinPacking(
                 this.rotations, this.fixedHeight, BinaryTreeBinPacking.SortingHeuristic.MAXSIDE);
         Rectangle[] placementMaxside = solverMaxside.solver(copyMaxside);
@@ -50,6 +50,8 @@ public class BinaryTreePackingAllHeuristics implements Solver {
 
         // compute the least wasted space
         int leastWastedSpace = Math.min(wastedSpaceWidth, Math.min(wastedSpaceHeight, wastedSpaceMaxside));
+
+        //return the best placement
         if (leastWastedSpace == wastedSpaceWidth) {
             return placementWidth;
         }

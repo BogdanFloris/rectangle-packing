@@ -157,6 +157,13 @@ public class OptimalRectanglePacking implements Solver {
         for (int i = 0; i < temp.length; i++) {
             arr[temp[i].index] = copyRectangle(temp[i]);
         }
+
+        // set an initial value for the optimal bin
+        optimalBin = new Rectangle(width, height, -1);
+
+        // save the greedy placement as an initial placement of the optimal solution (to be improved further)
+        optimalPlacement = copyRectangles(arr);
+
         //sort on area (descending)
         Arrays.sort( arr, new Comparator<Rectangle>() {
             @Override
@@ -164,13 +171,6 @@ public class OptimalRectanglePacking implements Solver {
                 return o2.height * o2.width - o1.height * o1.width;
             }
         });
-
-
-        // set an initial value for the optimal bin
-        optimalBin = new Rectangle(width, height, -1);
-
-        // save the greedy placement as an initial placement of the optimal solution (to be improved further)
-        optimalPlacement = copyRectangles(arr);
 
         // determine when to stop shrinking the rectangle
         int stop = Integer.MIN_VALUE;
@@ -199,7 +199,7 @@ public class OptimalRectanglePacking implements Solver {
 
             // now call the containment algorithm and see if we can fit the rectangles in the current bin
             infeasible |= (!containmentAlgorithm(width, height, arr, 0));
-
+//            System.out.println(infeasible);
             if (infeasible) {
                 height++;
 
@@ -217,11 +217,30 @@ public class OptimalRectanglePacking implements Solver {
                     optimalBin.height = height;
 
                     optimalPlacement = copyRectangles(arr);
+
+                    for (int i = 0; i < arr.length; i++) {
+                        optimalPlacement[arr[i].index] = copyRectangle(arr[i]);
+                    }
                 }
 
+                // DEBUG
+//                System.out.printf("width: %d; height: %d\n", width, height);
+//                System.out.printf("area: %d\n", width * height);
+//                for (int i = 0; i < height; i++) {
+//                    for (int j = 0; j < width; j++) {
+//                        System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
+//                    }
+//                   System.out.println();
+//                }
+//                System.out.println();
+//                System.out.flush();
                 width--;
             }
         }
+
+//        System.out.printf("optimal width: %d; optimal height: %d\n", optimalBin.width, optimalBin.height);
+//        System.out.printf("optimal area: %d\n", optimalBin.width * optimalBin.height);
+//        System.out.flush();
 
         return new Pair<>(optimalPlacement, optimalBin);
     }
@@ -307,6 +326,13 @@ public class OptimalRectanglePacking implements Solver {
         for (int i = 0; i < temp.length; i++) {
             arr[temp[i].index] = copyRectangle(temp[i]);
         }
+
+        // set an initial value for the optimal bin
+        optimalBin = new Rectangle(width, height, -1);
+
+        // save the greedy placement as an initial placement of the optimal solution (to be improved further)
+        optimalPlacement = copyRectangles(arr);
+
         //sort on area (descending)
         Arrays.sort( arr, new Comparator<Rectangle>() {
             @Override
@@ -314,12 +340,6 @@ public class OptimalRectanglePacking implements Solver {
                 return o2.height * o2.width - o1.height * o1.width;
             }
         });
-
-        // set an initial value for the optimal bin
-        optimalBin = new Rectangle(width, height, -1);
-
-        // save the greedy placement as an initial placement of the optimal solution (to be improved further)
-        optimalPlacement = copyRectangles(arr);
 
         // determine when to stop shrinking the rectangle
         int stop = Integer.MIN_VALUE;
@@ -360,6 +380,11 @@ public class OptimalRectanglePacking implements Solver {
                     optimalBin.height = height;
 
                     optimalPlacement = copyRectangles(arr);
+
+                    for (int i = 0; i < arr.length; i++) {
+                        optimalPlacement[arr[i].index] = copyRectangle(arr[i]);
+                    }
+
                 }
 
                 width--;

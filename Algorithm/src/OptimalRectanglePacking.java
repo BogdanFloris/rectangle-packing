@@ -157,6 +157,14 @@ public class OptimalRectanglePacking implements Solver {
         for (int i = 0; i < temp.length; i++) {
             arr[temp[i].index] = copyRectangle(temp[i]);
         }
+        //sort on area (descending)
+        Arrays.sort( arr, new Comparator<Rectangle>() {
+            @Override
+            public int compare(Rectangle o1, Rectangle o2) {
+                return o2.height * o2.width - o1.height * o1.width;
+            }
+        });
+
 
         // set an initial value for the optimal bin
         optimalBin = new Rectangle(width, height, -1);
@@ -299,6 +307,13 @@ public class OptimalRectanglePacking implements Solver {
         for (int i = 0; i < temp.length; i++) {
             arr[temp[i].index] = copyRectangle(temp[i]);
         }
+        //sort on area (descending)
+        Arrays.sort( arr, new Comparator<Rectangle>() {
+            @Override
+            public int compare(Rectangle o1, Rectangle o2) {
+                return o2.height * o2.width - o1.height * o1.width;
+            }
+        });
 
         // set an initial value for the optimal bin
         optimalBin = new Rectangle(width, height, -1);

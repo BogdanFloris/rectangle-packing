@@ -22,9 +22,10 @@ import java.util.Comparator;
  */
 public class BinaryTreeBinPacking implements Solver {
 
-    private Node root;                  // the root of the binary tree
-    private boolean rotations;          // if rotations are allowed
-    private int fixedHeight;            // the fixed height
+    private Node root;                          // the root of the binary tree
+    private boolean rotations;                  // if rotations are allowed
+    private int fixedHeight;                    // the fixed height
+    private SortingHeuristic heuristic = null;  // the sorting heuristic to be used
 
     public enum SortingHeuristic {
         WIDTH,      // sort by descending width
@@ -36,11 +37,15 @@ public class BinaryTreeBinPacking implements Solver {
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
         // sort the rectangles
-        if (fixedHeight > 0) {
-            sort(rectangles, SortingHeuristic.MAXSIDE);
+        if (heuristic == null) {
+            if (fixedHeight > 0) {
+                sort(rectangles, SortingHeuristic.MAXSIDE);
+            } else {
+                sort(rectangles, SortingHeuristic.HEIGHT);
+            }
         }
         else {
-            sort(rectangles, SortingHeuristic.HEIGHT);
+            sort(rectangles, this.heuristic);
         }
 
         // initialize the root with the width and the height of the first rectangle
@@ -109,6 +114,15 @@ public class BinaryTreeBinPacking implements Solver {
     public BinaryTreeBinPacking(boolean rotations, int fixedHeight) {
         this.rotations = rotations;
         this.fixedHeight = fixedHeight;
+    }
+
+    /**
+     * Constructor with Sorting heuristic
+     */
+    public BinaryTreeBinPacking(boolean rotations, int fixedHeight, SortingHeuristic heuristic) {
+        this.rotations = rotations;
+        this.fixedHeight = fixedHeight;
+        this.heuristic = heuristic;
     }
 
     /**

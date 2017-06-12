@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 // TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/10000_01_h300_rn.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
 
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
@@ -101,13 +101,13 @@ public class PackingSolver {
 //        solver = new OptimalRectanglePacking(rotations, height);
 //        result = solver.solver(rectangles);
 
-        if (n == 3) {
+        if (n <= 3) {
             solver = new OptimalRectanglePacking(rotations, height);
             result = solver.solver(rectangles);
-        } else if (n == 5) {
+        } else if (n <= 5) {
             solver = new OptimalRectanglePacking(rotations, height);
             result = solver.solver(rectangles);
-        } else if (n == 10) {
+        } else if (n <= 10) {
             solver = new MaximalRectanglesAlgorithm(rotations, height);
             Rectangle[] result1 = solver.solver(rectangles);
             int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
@@ -123,7 +123,7 @@ public class PackingSolver {
             } else {
                 result = result2;
             }
-        } else if (n == 25) {
+        } else if (n <= 25) {
             solver = new MaximalRectanglesAlgorithm(rotations, height);
             Rectangle[] result1 = solver.solver(rectangles);
             int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
@@ -139,7 +139,7 @@ public class PackingSolver {
             } else {
                 result = result2;
             }
-        } else if (n == 10000) {
+        } else {
             solver = new BinaryTreePackingAllHeuristics(rotations, height);
             result = solver.solver(rectangles);
         }

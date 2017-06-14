@@ -14,7 +14,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
 
     // prints out the placement matrix after each rectangle placed (for debugging purposes)
-    private static boolean showRectanglePlacement = false;
+    private static boolean showDebug = true;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -135,8 +135,6 @@ public class OptimalRectanglePacking2 implements Solver {
     /**
      * Generate an anytime solution - i.e. generate an initial solution that keeps on improving.
      * Can be stopped at anytime to get a pretty good enclosing bin.
-     *
-     * TODO: implement fixed height
      *
      * @param rectangles the given array of rectangles
      * @return an array in which rectangles are placed optimally along with the enclosing bin
@@ -340,9 +338,12 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // Prune the current subtree if the partial solution cannot be
         // extended to a complete solution
-        //if (cumulativeWidthPruning(width, height, rectangles, iteration)) {
-        //    return false;
-        //}
+        if (cumulativeWidthPruning(width, height, rectangles, iteration)) {
+            if (showDebug) {
+                System.out.print("pruned by cum.width\n");
+            }
+            return false;
+        }
 
         // Place the next rectangle (from left to right, from bottom to top)
         for (int y = 0; y < height; y++) {
@@ -373,6 +374,98 @@ public class OptimalRectanglePacking2 implements Solver {
         // not be extended to a complete solution
         return false;
     }
+
+    /**
+     * A function that prunes any partial solution that cannot provide a valid solution by checking if
+     * the amount of free space that can accommodate rectangles with width w is larger than the cumulative area
+     * of those rectangles
+     *
+     * @param width the width of the enclosing bin
+     * @param height the height of the enclosing bin
+     * @param rectangles the given list of rectangles
+     * @param index the current index of the rectangle to be placed
+     * @return true if the subtree can be pruned; false otherwise
+     */
+    private boolean cumulativeWidthPruning(int width, int height, Rectangle[] rectangles, int index) {
+        // create the histogram containing the number of free cells that have a certain width.
+        histogram = new int[width];
+
+        // initialize the histogram
+        for (int i = 0; i < width; i++) {
+            histogram[i] = 0;
+        }
+
+        int widthCounter = 0; // count the width of the block of free cells.
+
+        // go through all the cells to find free ones
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (placementMatrix[x][y] >= 0) { // skip spaces that are already occupied by other rectangles
+                    x += mapWidth.get(placementMatrix[x][y]) - 1;
+                    if (widthCounter > 0) {
+                        histogram[widthCounter - 1] = histogram[widthCounter - 1] + widthCounter;
+                        widthCounter = 0;
+                    }
+                    continue;
+                }
+                widthCounter++;
+            }
+            // We ended a row
+            if (widthCounter > 0) {
+                histogram[widthCounter - 1] = histogram[widthCounter - 1] + widthCounter;
+                widthCounter = 0;
+            }
+        }
+
+        // now we go through all the remaining rectangles and update the histogram to see if we have enough space
+        for (int i = index; i < rectangles.length; i++) {
+            // go through the histogram and find free cells that can fit the rectangle
+            if (!updateHistogram(rectangles[i], width)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * A function that finds using the histogram if a rectangle can be placed, if it can be placed the histogram
+     * is updated.
+     *
+     * @param rectangle the given rectangles
+     * @param width the width of the enclosing bin
+     * @return true if rectangle can be placed; false otherwise
+     */
+    private boolean updateHistogram(Rectangle rectangle, int width) {
+        int freeSpace = 0;
+        // count the the amount of free cells that have at least the width of the rectangle
+        for (int i = rectangle.width - 1; i < width; i++) {
+            freeSpace += histogram[i];
+        }
+
+        int rectangleArea = (rectangle.width * rectangle.height);
+        // if the rectangle fits update the histogram
+        if (freeSpace >= rectangleArea) {
+            for (int j = rectangle.width - 1; j < width; j++) {
+                // if there are no free cells of the current width dont even bother.
+                if (histogram[j] > 0) {
+                    if (histogram[j] >= rectangleArea) {
+                        histogram[j] = histogram[j] - rectangleArea;
+                        return true;
+                    } else {
+                        rectangleArea = rectangleArea - histogram[j];
+                        histogram[j] = 0;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+
+
+
 
 
 
@@ -453,7 +546,7 @@ public class OptimalRectanglePacking2 implements Solver {
         rectangle.y = y;
 
         // for debug purposes (Gives a nice insight into how the algorithm works!)
-        if (showRectanglePlacement) {
+        if (showDebug) {
             printPlacementMatrix();
         }
     }
@@ -516,6 +609,7 @@ public class OptimalRectanglePacking2 implements Solver {
     private void printPlacementMatrix() {
         //(print the placement matrix)
 
+        System.out.println();
         System.out.printf("width: %d; height: %d\n", placementMatrix.length, placementMatrix[0].length);
         System.out.printf("area: %d\n", placementMatrix.length * placementMatrix[0].length);
         for (int j = placementMatrix[0].length - 1; j >= 0; j--) {
@@ -524,7 +618,6 @@ public class OptimalRectanglePacking2 implements Solver {
             }
                 System.out.println();
         }
-        System.out.println();
         System.out.flush();
     }
 

@@ -6,15 +6,14 @@ import java.util.HashMap;
  * Improvement on previous optimal rectangle packer, created as a separate class as not to
  * destroy code previous class.
  *
- * 12-06-2017
- * Jelle Wemmenhove
  */
 
 public class OptimalRectanglePacking2 implements Solver {
 
 
     // prints out the placement matrix after each rectangle placed (for debugging purposes)
-    private static boolean showDebug = false;
+    private static boolean showEachPlacement = true;
+    private static boolean showFeasibleSolutions = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -31,8 +30,10 @@ public class OptimalRectanglePacking2 implements Solver {
 
     // dependent on given bounding box
     private int[][] placementMatrix;                    // matrix that holds the positions of rectangles
-    // (can be made local var?)
-    private int[] histogram;                        // array that will hold the histogram for pruning
+    private int[][] emptyRowMatrix;
+    private int[][] emptyColumnMatrix;
+
+    private int[] histogram;
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {
@@ -166,6 +167,10 @@ public class OptimalRectanglePacking2 implements Solver {
         height = optimalBin.height;
         width = optimalBin.width;
 
+        if (showFeasibleSolutions) {
+            printPlacementMatrix(placementMatrix);
+        }
+
         // sort rectangles on area (descending)
         Rectangle[] sortedRects = copyRectangles(rectangles);
         Arrays.sort( sortedRects, new Comparator<Rectangle>() {
@@ -225,7 +230,7 @@ public class OptimalRectanglePacking2 implements Solver {
             //TODO: perform more tests
 
             // create a new placement matrix for the new bounding box
-            placementMatrix = getNewPlacementMatrix(width, height);
+            generateNewMatrices(width, height, false);
             // call the containment algorithm (!!! if solution is found, the solution is stored in sortedRects)
             feasible = containmentAlgorithm(width, height, sortedRects, 0);
 
@@ -240,7 +245,9 @@ public class OptimalRectanglePacking2 implements Solver {
                     optimalPlacement[sortedRects[i].index] = copyRectangle(sortedRects[i]);
                 }
 
-                printPlacementMatrix();
+                if (showFeasibleSolutions) {
+                    printPlacementMatrix(placementMatrix);
+                }
             }
         }
 
@@ -277,7 +284,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
 
         // create a new placement matrix
-        placementMatrix = getNewPlacementMatrix(maxWidth, height);
+        generateNewMatrices(maxWidth, height, true);
 
         // greedily place rectangles, from bottom to top, from left to right
         rectangle_loop:
@@ -294,7 +301,7 @@ public class OptimalRectanglePacking2 implements Solver {
                     // check if it can be placed
                     if (canPlaceAt(x, y, sortedRects[i], maxWidth, height)) {
                         // place the rectangle!
-                        placeRectangle(x, y, sortedRects[i]);
+                        placeRectangle(x, y, sortedRects[i], maxWidth, height, false);
                         continue rectangle_loop;    // place the next rectangle
                     }
 
@@ -340,12 +347,12 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // Prune the current subtree if the partial solution cannot be
         // extended to a complete solution
-        if (cumulativeWidthPruning(width, height, rectangles, iteration)) {
-            if (showDebug) {
-                System.out.print("pruned by cum.width\n");
-            }
-            return false;
-        }
+        //if (cumulativeWidthPruning(width, height, rectangles, iteration)) {
+        //    if (showEachPlacement) {
+        //        System.out.print("pruned by cum.width\n");
+        //    }
+        //    return false;
+        //}
 
         // Place the next rectangle (from left to right, from bottom to top)
         for (int y = 0; y < height; y++) {
@@ -358,7 +365,7 @@ public class OptimalRectanglePacking2 implements Solver {
                 // try to place the rectangle
                 if (canPlaceAt(x, y, rectangles[iteration], width, height)) {
                     // if it fits, place the rectangle and iterate
-                    placeRectangle(x, y, rectangles[iteration]);
+                    placeRectangle(x, y, rectangles[iteration], width, height, true);
                     if (containmentAlgorithm(width, height, rectangles, iteration + 1)) {
                         // if this partial solution can be extended to a complete iteration,
                         // send this message up the iteration path
@@ -465,28 +472,33 @@ public class OptimalRectanglePacking2 implements Solver {
     }
 
 
-
-
-
-
-
-
-
     /**
-     * Creates a new placement matrix of size (width x height) filled with the value -1.
+     * Creates new matrices that keep information on each cell of the bounding box of given size.
      *
      * @param width
      * @param height
-     * @return
+     * @param placementMatrixOnly
      */
-    private int[][] getNewPlacementMatrix (int width, int height) {
-        int[][] newPlacementMatrix = new int[width][height];
+    private void generateNewMatrices (int width, int height, boolean placementMatrixOnly) {
+
+        // create new matrices
+        placementMatrix = new int[width][height];
+        if (!placementMatrixOnly) {
+            emptyRowMatrix = new int[width][height];
+            emptyColumnMatrix = new int[width][height];
+        }
+
+        // fill em up
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                newPlacementMatrix[x][y] = -1;
+                placementMatrix[x][y] = -1;
+                if (!placementMatrixOnly) {
+                    emptyRowMatrix[x][y] = width;
+                    emptyColumnMatrix[x][y] = height;
+                }
             }
         }
-        return newPlacementMatrix;
+
     }
 
 
@@ -534,7 +546,7 @@ public class OptimalRectanglePacking2 implements Solver {
      * @param y the y coordinate
      * @param rectangle the rectangle to be placed
      */
-    private void placeRectangle(int x, int y, Rectangle rectangle) {
+    private void placeRectangle(int x, int y, Rectangle rectangle, int width, int height, boolean updateEmptyMatrices) {
 
         // fill the placement matrix
         for (int i = x; i < x + rectangle.width; i++) {
@@ -543,13 +555,60 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         }
 
+        if (updateEmptyMatrices) {
+            // update empty rows
+            for (int j = y; j < y + rectangle.height; j++) {
+                // check left of the rectangle
+                int freeCellsLeft = 0;
+                int i = x - 1;
+                while (i >= 0 && placementMatrix[i][j] == -1) {
+                    freeCellsLeft++;
+                    i--;
+                }
+                // update left of the rectangle
+                for (int k = i + 1; k < x; k++) {
+                    emptyRowMatrix[k][j] = freeCellsLeft;
+                }
+                // update right of the rectangle
+                int freeCellsRight = emptyRowMatrix[x][j] - freeCellsLeft - rectangle.width;
+                for (int k = x + rectangle.width; k < x + rectangle.width + freeCellsRight; k++) {
+                    emptyRowMatrix[k][j] = freeCellsRight;
+                }
+            }
+
+            // update empty columns
+            for (int i = x; i < x + rectangle.width; i++) {
+                // check below the rectangle
+                int freeCellsBelow = 0;
+                int j = y - 1;
+                while (j >= 0 && placementMatrix[i][j] == -1) {
+                    freeCellsBelow++;
+                    j--;
+                }
+                // update below the rectangle
+                for (int l = j + 1; l < y; l++) {
+                    emptyColumnMatrix[i][l] = freeCellsBelow;
+                }
+                // update above the rectangle
+                int freeCellsAbove = emptyColumnMatrix[i][y] - freeCellsBelow - rectangle.height;
+                for (int l = y + rectangle.height; l < y + rectangle.height + freeCellsAbove; l++) {
+                    emptyColumnMatrix[i][l] = freeCellsAbove;
+                }
+            }
+
+        }
+
         // set the coordinates of the rectangle
         rectangle.x = x;
         rectangle.y = y;
 
         // for debug purposes (Gives a nice insight into how the algorithm works!)
-        if (showDebug) {
-            printPlacementMatrix();
+        if (showEachPlacement) {
+            printPlacementMatrix(placementMatrix);
+            if (updateEmptyMatrices) {
+                printPlacementMatrix(emptyRowMatrix);
+                printPlacementMatrix(emptyColumnMatrix);
+            }
         }
     }
 
@@ -608,21 +667,19 @@ public class OptimalRectanglePacking2 implements Solver {
         return ret;
     }
 
-    private void printPlacementMatrix() {
-        if (showDebug) {
+    private void printPlacementMatrix(int[][] matrix) {
             //(print the placement matrix)
 
             System.out.println();
-            System.out.printf("width: %d; height: %d\n", placementMatrix.length, placementMatrix[0].length);
-            System.out.printf("area: %d\n", placementMatrix.length * placementMatrix[0].length);
-            for (int j = placementMatrix[0].length - 1; j >= 0; j--) {
-                for (int i = 0; i < placementMatrix.length; i++) {
-                    System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
+            System.out.printf("width: %d; height: %d\n", matrix.length, matrix[0].length);
+            System.out.printf("area: %d\n", (long) matrix.length * (long) matrix[0].length);
+            for (int j = matrix[0].length - 1; j >= 0; j--) {
+                for (int i = 0; i < matrix.length; i++) {
+                    System.out.print((matrix[i][j] == -1) ? "." : matrix[i][j]);
                 }
                 System.out.println();
             }
             System.out.flush();
-        }
     }
 
     private class Pair<T, U> {

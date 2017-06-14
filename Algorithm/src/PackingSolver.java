@@ -101,7 +101,7 @@ public class PackingSolver {
         //solver = new OptimalRectanglePacking2(rotations, height);
         //result = solver.solver(rectangles);
 
-        if (n <= 3) {
+        if (true) {
             solver = new OptimalRectanglePacking2(rotations, height);
             result = solver.solver(rectangles);
         } else if (n <= 5) {

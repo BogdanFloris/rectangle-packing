@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 // TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/05_01_h7_ry.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
 
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
@@ -98,8 +98,8 @@ public class PackingSolver {
 
         Rectangle[] result = null;
 
-//        solver = new OptimalRectanglePacking(rotations, height);
-//        result = solver.solver(rectangles);
+        //solver = new OptimalRectanglePacking2(rotations, height);
+        //result = solver.solver(rectangles);
 
         if (n <= 3) {
             solver = new OptimalRectanglePacking2(rotations, height);

@@ -14,7 +14,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
 
     // prints out the placement matrix after each rectangle placed (for debugging purposes)
-    private static boolean showDebug = true;
+    private static boolean showDebug = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -239,6 +239,8 @@ public class OptimalRectanglePacking2 implements Solver {
                 for (int i = 0; i < sortedRects.length; i++) {
                     optimalPlacement[sortedRects[i].index] = copyRectangle(sortedRects[i]);
                 }
+
+                printPlacementMatrix();
             }
         }
 
@@ -607,18 +609,20 @@ public class OptimalRectanglePacking2 implements Solver {
     }
 
     private void printPlacementMatrix() {
-        //(print the placement matrix)
+        if (showDebug) {
+            //(print the placement matrix)
 
-        System.out.println();
-        System.out.printf("width: %d; height: %d\n", placementMatrix.length, placementMatrix[0].length);
-        System.out.printf("area: %d\n", placementMatrix.length * placementMatrix[0].length);
-        for (int j = placementMatrix[0].length - 1; j >= 0; j--) {
-            for (int i = 0; i < placementMatrix.length; i++) {
-                System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
-            }
+            System.out.println();
+            System.out.printf("width: %d; height: %d\n", placementMatrix.length, placementMatrix[0].length);
+            System.out.printf("area: %d\n", placementMatrix.length * placementMatrix[0].length);
+            for (int j = placementMatrix[0].length - 1; j >= 0; j--) {
+                for (int i = 0; i < placementMatrix.length; i++) {
+                    System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
+                }
                 System.out.println();
+            }
+            System.out.flush();
         }
-        System.out.flush();
     }
 
     private class Pair<T, U> {

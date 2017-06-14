@@ -223,6 +223,6 @@ public class PackingSolver {
     }
 
     public static void main(String[] args) {
-        new PackingSolver().runIO();
+        new PackingSolver().run();
     }
 }

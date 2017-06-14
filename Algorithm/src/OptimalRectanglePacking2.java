@@ -12,6 +12,10 @@ import java.util.HashMap;
 
 public class OptimalRectanglePacking2 implements Solver {
 
+
+    // prints out the placement matrix after each rectangle placed (for debugging purposes)
+    private static boolean showRectanglePlacement = false;
+
     private static boolean anytime;                       // true if anytime; false if iterative
 
     // dependent on current problem
@@ -240,18 +244,7 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         }
 
-        // DEBUG (print the placement matrix)
 
-//                System.out.printf("width: %d; height: %d\n", width, height);
-//                System.out.printf("area: %d\n", width * height);
-//                for (int i = 0; i < width; i++) {
-//                    for (int j = 0; j < height; j++) {
-//                        System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
-//                    }
-//                   System.out.println();
-//                }
-//                System.out.println();
-//                System.out.flush();
 
         // return optimal solution
         return new Pair<> (optimalPlacement, optimalBin);
@@ -458,6 +451,11 @@ public class OptimalRectanglePacking2 implements Solver {
         // set the coordinates of the rectangle
         rectangle.x = x;
         rectangle.y = y;
+
+        // for debug purposes (Gives a nice insight into how the algorithm works!)
+        if (showRectanglePlacement) {
+            printPlacementMatrix();
+        }
     }
 
     /**
@@ -470,7 +468,7 @@ public class OptimalRectanglePacking2 implements Solver {
      */
     private void clearRectangle(int x, int y, Rectangle rectangle) {
         for (int i = x; i < x + rectangle.width; i++) {
-            for (int j = y; j < y + rectangle.width; j++) {
+            for (int j = y; j < y + rectangle.height; j++) {
                 placementMatrix[i][j] = -1;
             }
         }
@@ -513,6 +511,21 @@ public class OptimalRectanglePacking2 implements Solver {
         ret.index = rectangle.index;
 
         return ret;
+    }
+
+    private void printPlacementMatrix() {
+        //(print the placement matrix)
+
+        System.out.printf("width: %d; height: %d\n", placementMatrix.length, placementMatrix[0].length);
+        System.out.printf("area: %d\n", placementMatrix.length * placementMatrix[0].length);
+        for (int j = placementMatrix[0].length - 1; j >= 0; j--) {
+            for (int i = 0; i < placementMatrix.length; i++) {
+                System.out.print((placementMatrix[i][j] == -1) ? "." : placementMatrix[i][j]);
+            }
+                System.out.println();
+        }
+        System.out.println();
+        System.out.flush();
     }
 
     private class Pair<T, U> {

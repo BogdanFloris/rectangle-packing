@@ -1,4 +1,4 @@
 test file: src/tests/test1.in
 rotations: allowed
-height: fixed
-running time: 1,00646397 seconds
+height: free
+running time: 5,25860918 seconds

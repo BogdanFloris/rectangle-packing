@@ -1,4 +1,4 @@
-test file: src/tests/canvas_testcases/05_01_h7_ry.txt
+test file: src/tests/test1.in
 rotations: allowed
 height: fixed
-running time: 0,00876004 seconds
+running time: 1,00646397 seconds

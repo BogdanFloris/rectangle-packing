@@ -373,7 +373,7 @@ public class OptimalRectanglePacking2 implements Solver {
                     } else {
                         // if this partial solution cannot be extended to a complete iteration,
                         // clear the rectangle and continue the loop to try different positions.
-                        clearRectangle(x, y, rectangles[iteration]);
+                        clearRectangle(x, y, rectangles[iteration], width, height, true);
                     }
                 }
             }
@@ -620,10 +620,48 @@ public class OptimalRectanglePacking2 implements Solver {
      * @param y the y coordinate
      * @param rectangle the rectangle to be cleared
      */
-    private void clearRectangle(int x, int y, Rectangle rectangle) {
+    private void clearRectangle(int x, int y, Rectangle rectangle, int width, int height, boolean updateEmptyMatrices) {
         for (int i = x; i < x + rectangle.width; i++) {
             for (int j = y; j < y + rectangle.height; j++) {
                 placementMatrix[i][j] = -1;
+            }
+        }
+
+        if (updateEmptyMatrices) {
+            // update empty rows
+            for (int j = y; j < y + rectangle.height; j++) {
+                int cellsEmpty = rectangle.width;
+                int leftMostEmpty = x;
+                if (x > 0 && placementMatrix[x - 1][j] == -1) {
+                    cellsEmpty += emptyRowMatrix[x - 1][j];
+                    leftMostEmpty -= emptyRowMatrix[x - 1][j];
+                }
+                if (x + rectangle.width < width && placementMatrix[x + rectangle.width][j] == -1) {
+                    cellsEmpty += emptyRowMatrix[x + rectangle.width][j];
+                }
+
+                // fill up cells
+                for (int i = leftMostEmpty; i < leftMostEmpty + cellsEmpty; i++) {
+                    emptyRowMatrix[i][j] = cellsEmpty;
+                }
+            }
+
+            // update empty columns
+            for (int i = x; i < x + rectangle.width; i++) {
+                int cellsEmpty = rectangle.height;
+                int bottomMostEmpty = y;
+                if (y > 0 && placementMatrix[i][y - 1] == -1) {
+                    cellsEmpty += emptyColumnMatrix[i][y - 1];
+                    bottomMostEmpty -= emptyColumnMatrix[i][y - 1];
+                }
+                if (y + rectangle.height < height && placementMatrix[i][y + rectangle.height] == -1) {
+                    cellsEmpty += emptyColumnMatrix[i][y + rectangle.height];
+                }
+
+                // fill up cells
+                for (int j = bottomMostEmpty; j < bottomMostEmpty + cellsEmpty; j++) {
+                    emptyColumnMatrix[i][j] = cellsEmpty;
+                }
             }
         }
     }

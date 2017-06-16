@@ -17,7 +17,7 @@ public class OptimalRectanglePacking2 implements Solver {
     private static boolean showFeasibleSolutions = false;
 
     // controls what pruning methods are used, for experimentation purposes
-    private static boolean pruneWastedSpace = false;
+    private static boolean pruneWastedSpace = true;
     private static boolean pruneDominance = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
@@ -120,9 +120,7 @@ public class OptimalRectanglePacking2 implements Solver {
                         }
                     }
 
-                    System.out.println(Integer.toBinaryString(combination));
-
-                    // comupte optimal packing
+                    // compute optimal packing
                     Pair<Rectangle[], Rectangle> solution = anytimeSolution(arr);
 
                     if (PackingSolver.usesTimer && PackingSolver.algorithmInterrupted) {

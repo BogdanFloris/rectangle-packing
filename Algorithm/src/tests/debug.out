@@ -1,5 +1,5 @@
-test file: src/tests/canvas_testcases/03_04_hf_ry.txt
+test file: src/tests/canvas_testcases/03_03_h12_ry.txt
 rotations: allowed
-height: free
+height: fixed
 algorithm: Optimal
-running time: 0.00971297 seconds
+running time: 1.91734794 seconds

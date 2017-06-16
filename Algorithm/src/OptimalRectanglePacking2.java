@@ -1,6 +1,7 @@
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.OptionalInt;
 
 /**
  * Improvement on previous optimal rectangle packer, created as a separate class as not to
@@ -16,7 +17,7 @@ public class OptimalRectanglePacking2 implements Solver {
     private static boolean showFeasibleSolutions = false;
 
     // controls what pruning methods are used, for experimentation purposes
-    private static boolean pruneWastedSpace = true;
+    private static boolean pruneWastedSpace = false;
     private static boolean pruneDominance = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
@@ -42,6 +43,8 @@ public class OptimalRectanglePacking2 implements Solver {
     private long[] unplacedRectsHeightHistogram;
 
     private int[] histogram;
+
+    private Rectangle globalOptimum;                // used to prune out weak solutions in case rotations are allowed
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {
@@ -87,7 +90,6 @@ public class OptimalRectanglePacking2 implements Solver {
 
         if (anytime) {
             if (rotationsAllowed) {
-
                 int n = rectangles.length;
 
                 // set up local variables that store the best solution
@@ -95,6 +97,10 @@ public class OptimalRectanglePacking2 implements Solver {
                         new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
                         new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
                 Rectangle[] optimalSolution = null;
+
+                globalOptimum = (fixedHeight == 0) ?
+                        new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
+                        new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
 
                 // find the optimal solution for each combination of rotations
                 outer_combination:
@@ -114,8 +120,14 @@ public class OptimalRectanglePacking2 implements Solver {
                         }
                     }
 
+                    System.out.println(Integer.toBinaryString(combination));
+
                     // comupte optimal packing
                     Pair<Rectangle[], Rectangle> solution = anytimeSolution(arr);
+
+                    if (PackingSolver.usesTimer && PackingSolver.algorithmInterrupted) {
+                        return null;
+                    }
 
                     // check if this rotation combination is better
                     if ((long) optimalBin.width * (long) optimalBin.height >
@@ -124,6 +136,9 @@ public class OptimalRectanglePacking2 implements Solver {
 
                         optimalBin.width = solution.second.width;
                         optimalBin.height = solution.second.height;
+
+                        globalOptimum.width = solution.second.width;
+                        globalOptimum.height = solution.second.height;
                     }
                 }
 
@@ -188,7 +203,6 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         });
 
-
         // start trying smaller and smaller bounding boxes
 
         // determine when to stop shrinking the rectangle
@@ -202,13 +216,24 @@ public class OptimalRectanglePacking2 implements Solver {
 
         change_bin:
         while (true) {
-
+            if (PackingSolver.usesTimer && PackingSolver.algorithmInterrupted) {
+                return null;
+            }
             // change dimensions bounding box
             if (feasible) {
                 // decrease width until area is smaller than the area of the optimal bounding box
-                while ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height) {
+                while (width >= minWidth &&
+                        ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height)) {
                     width--;    // shrink bounding box
                 }
+
+                if (rotationsAllowed) {
+                    while (width >= minWidth &&
+                            (long) width * (long) height >= (long) globalOptimum.width * (long) globalOptimum.height) {
+                        width--;
+                    }
+                }
+
                 if (width < minWidth) {
                     break;  // no smaller bounding box possible
                 }
@@ -217,9 +242,18 @@ public class OptimalRectanglePacking2 implements Solver {
                 if (fixedHeight == 0) {
                     height++;   // enlarge bounding box
                     // decrease width until area is smaller than the area of the optimal bounding box
-                    while ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height) {
+                    while (width >= minWidth &&
+                            ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height)) {
                         width--;    // shrink bounding box
                     }
+
+                    if (rotationsAllowed) {
+                        while (width >= minWidth &&
+                                (long) width * (long) height >= (long) globalOptimum.width * (long) globalOptimum.height) {
+                            width--;
+                        }
+                    }
+
                     if (width < minWidth) {
                         break;  // no smaller bounding box possible
                     }
@@ -252,6 +286,12 @@ public class OptimalRectanglePacking2 implements Solver {
                 // store new bounding box
                 optimalBin.width = width;
                 optimalBin.height = height;
+
+                if (rotationsAllowed) {
+                    globalOptimum.width = width;
+                    globalOptimum.height = height;
+                }
+
                 // store solution (unsorted)
                 for (int i = 0; i < sortedRects.length; i++) {
                     optimalPlacement[sortedRects[i].index] = copyRectangle(sortedRects[i]);
@@ -395,6 +435,14 @@ public class OptimalRectanglePacking2 implements Solver {
      */
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles,
                                          int iteration, long[] emptyRowHistogram, long[] emptyColumnHistogram) {
+
+        // stop after 4.5 minutes and run a faster algorithm
+        if (PackingSolver.usesTimer &&
+                (System.currentTimeMillis() - PackingSolver.programStartTime > 270000 ||
+                PackingSolver.algorithmInterrupted)) {
+            PackingSolver.algorithmInterrupted = true;
+            return false;
+        }
 
         if (iteration == rectangles.length) { // a solution of packing the rectangles into the bin has been found
             return true;

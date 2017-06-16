@@ -9,10 +9,12 @@ import java.text.DecimalFormat;
 // TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/canvas_testcases/10000_02_hf_ry.txt";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/canvas_testcases/03_04_hf_ry.txt";         // standard stream input
 
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
+
+    private boolean multipleRuns = false;
 
     /** INSTANCE VARIABLES */
     private String      variant;                            // free or fixed
@@ -25,6 +27,10 @@ public class PackingSolver {
     private InputReader in;                                 // the standard input stream of the program
     private PrintWriter out;                                // the standard output stream of the program
     private PrintWriter debug;                              // the standard error stream of the program
+
+    public static long programStartTime;
+    public static boolean algorithmInterrupted;
+    public static boolean usesTimer;                        // whether the current algorithm uses the timer or not
 
     // MAKE FALSE WHEN SUBMITTING ON MOMOTOR
     private static final boolean IN_DEBUG = false;
@@ -98,28 +104,63 @@ public class PackingSolver {
 
         Rectangle[] result = null;
 
+        algorithmInterrupted = false;
+
         if (n == 3) {
+            usesTimer = false;
+
             solver = new OptimalRectanglePacking2(rotations, height);
             result = solver.solver(rectangles);
+
+            debug.println("algorithm: Optimal");
+            debug.flush();
         } else if (n == 5) {
+            usesTimer = false;
+
             solver = new OptimalRectanglePacking2(rotations, height);
             result = solver.solver(rectangles);
+
+            debug.println("algorithm: Optimal");
+            debug.flush();
         } else if (n == 10) {
-            solver = new MaximalRectanglesAlgorithm(rotations, height);
-            Rectangle[] result1 = solver.solver(rectangles);
-            int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
-                    ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+            usesTimer = true;
 
-            solver = new BinaryTreeBinPacking(rotations, height);
-            Rectangle[] result2 = solver.solver(rectangles);
-            int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
-                    ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+            solver = new OptimalRectanglePacking2(rotations, height);
 
-            if (area1 < area2) {
-                result = result1;
+            programStartTime = System.currentTimeMillis();
+
+            result = solver.solver(rectangles);
+
+            if (algorithmInterrupted) {
+                debug.println("INTERRUPTED");
+
+                solver = new MaximalRectanglesAlgorithm(rotations, height);
+                Rectangle[] result1 = solver.solver(rectangles);
+                int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                        ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+                solver = new BinaryTreeBinPacking(rotations, height);
+                Rectangle[] result2 = solver.solver(rectangles);
+                int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                        ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+                if (area1 < area2) {
+                    debug.println("algorithm: Maximal Rectangles Algorithm");
+                    debug.flush();
+
+                    result = result1;
+                } else {
+                    debug.println("algorithm: Binary Tree Packing");
+                    debug.flush();
+
+                    result = result2;
+                }
+
             } else {
-                result = result2;
+                debug.println("algorithm: Optimal");
+                debug.flush();
             }
+
         } else if (n == 25) {
             solver = new MaximalRectanglesAlgorithm(rotations, height);
             Rectangle[] result1 = solver.solver(rectangles);
@@ -132,13 +173,22 @@ public class PackingSolver {
                     ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
 
             if (area1 < area2) {
+                debug.println("algorithm: Maximal Rectangles Algorithm");
+                debug.flush();
+
                 result = result1;
             } else {
+                debug.println("algorithm: Binary Tree Packing");
+                debug.flush();
+
                 result = result2;
             }
         } else if (n == 10000) {
             solver = new BinaryTreePackingAllHeuristics(rotations, height);
             result = solver.solver(rectangles);
+
+            debug.println("algorithm: Binary Tree Packing");
+            debug.flush();
         }
 
         assert(result != null);
@@ -201,20 +251,43 @@ public class PackingSolver {
      * namely {@code OUT_DEBUG_FILE}.
      */
     public void run() {
-        try {
-            in = new InputReader(new File(IN_STD_FILE));
-            out = new PrintWriter(new File(OUT_STD_FILE));
-            debug = new PrintWriter(new File(OUT_DEBUG_FILE));
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+        if (multipleRuns) {
+            File directory = new File("src/tests/canvas_testcases");
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    try {
+                        in = new InputReader(file);
+                        out = new PrintWriter("src/tests/canvas_testcases/outputs/" + file.getName());
+                        debug = new PrintWriter(new File(OUT_DEBUG_FILE));
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    debug.println("test file: " + IN_STD_FILE);
+
+                    solve();
+
+                    out.close();
+                    debug.close();
+                }
+            }
+        } else {
+            try {
+                in = new InputReader(new File(IN_STD_FILE));
+                out = new PrintWriter(new File(OUT_STD_FILE));
+                debug = new PrintWriter(new File(OUT_DEBUG_FILE));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            debug.println("test file: " + IN_STD_FILE);
+
+            solve();
+
+            out.close();
+            debug.close();
         }
-
-        debug.println("test file: " + IN_STD_FILE);
-
-        solve();
-
-        out.close();
-        debug.close();
     }
 
     public static void main(String[] args) {

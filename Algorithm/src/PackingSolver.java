@@ -98,9 +98,6 @@ public class PackingSolver {
 
         Rectangle[] result = null;
 
-        //solver = new OptimalRectanglePacking2(rotations, height);
-        //result = solver.solver(rectangles);
-
         if (true) {
             solver = new OptimalRectanglePacking2(rotations, height);
             result = solver.solver(rectangles);

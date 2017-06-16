@@ -11,9 +11,13 @@ import java.util.HashMap;
 public class OptimalRectanglePacking2 implements Solver {
 
 
-    // prints out the placement matrix after each rectangle placed (for debugging purposes)
+    // prints out a.o. the placement matrix, for debugging purposes
     private static boolean showEachPlacement = false;
     private static boolean showFeasibleSolutions = false;
+
+    // controls what pruning methods are used, for experimentation purposes
+    private static boolean pruneWastedSpace = true;
+    private static boolean pruneDominance = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -34,8 +38,8 @@ public class OptimalRectanglePacking2 implements Solver {
     private int[][] emptyColumnMatrix;
 
     // dependent on search depth containment algorithm
-    private long[] widthUnplacedHistogram;
-    private long[] heightUnplacedHistogram;
+    private long[] unplacedRectsWidthHistogram;
+    private long[] unplacedRectsHeightHistogram;
 
     private int[] histogram;
 
@@ -239,25 +243,8 @@ public class OptimalRectanglePacking2 implements Solver {
 
             //TODO: perform more tests
 
-            // create a new placement matrix for the new bounding box
-            generateNewMatrices(width, height, false);
-
-            // create new histograms empty space
-            long[] rowHistogram = new long[width];
-            rowHistogram[width - 1] += (long) width * (long) height;
-            long[] columnHistogram = new long[height];
-            columnHistogram[height - 1] += (long) width * (long) height;
-            // set up other stuff for wasted space pruning
-            widthUnplacedHistogram = new long[width];
-            heightUnplacedHistogram = new long[height];
-            for (Rectangle rectangle : sortedRects) {
-                long area = (long) rectangle.width *(long) rectangle.height;
-                widthUnplacedHistogram[rectangle.width - 1] += area;
-                heightUnplacedHistogram[rectangle.height - 1] += area;
-            }
-
             // call the containment algorithm (!!! if solution is found, the solution is stored in sortedRects)
-            feasible = containmentAlgorithm(width, height, sortedRects, 0, rowHistogram, columnHistogram);
+            feasible = containmentAlgorithm(width, height, sortedRects);
 
             // if the bounding box is feasible, store the new solution as the optimal solution
             // (it is optimal because we only test bounding boxes with a smaller area)
@@ -309,7 +296,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
 
         // create a new placement matrix
-        generateNewMatrices(maxWidth, height, true);
+        generateNewMatrices(maxWidth, height, false);
 
         // greedily place rectangles, from bottom to top, from left to right
         rectangle_loop:
@@ -326,7 +313,8 @@ public class OptimalRectanglePacking2 implements Solver {
                     // check if it can be placed
                     if (canPlaceAt(x, y, sortedRects[i], maxWidth, height)) {
                         // place the rectangle!
-                        placeRectangle(x, y, sortedRects[i], maxWidth, height, false, null, null);
+                        placeRectangle(x, y, sortedRects[i], maxWidth, height,
+                                false, null, null);
                         continue rectangle_loop;    // place the next rectangle
                     }
 
@@ -352,6 +340,46 @@ public class OptimalRectanglePacking2 implements Solver {
         return new Pair<Rectangle[], Rectangle> (rectangles, boundingBox);
     }
 
+    private boolean containmentAlgorithm (int width, int height, Rectangle[] rectangles) {
+
+        // set up stuff for the containment algorithm
+
+        // generate new matrices
+        generateNewMatrices(width, height, pruneWastedSpace || pruneDominance);
+
+        // create new histograms empty space (used for pruning wasted space)
+        long[] emptyRowHistogram;
+        long[] emptyColumnHistogram;
+        if (pruneWastedSpace) {
+            // create histograms counting empty space
+            emptyRowHistogram = new long[width];
+            emptyColumnHistogram = new long[height];
+            // fill them up
+            long areaBox = (long) width * (long) height;
+            emptyRowHistogram[width - 1] += areaBox;
+            emptyColumnHistogram[height - 1] += areaBox;
+
+            // create histograms counting unplaced rectangles
+            unplacedRectsWidthHistogram = new long[width];
+            unplacedRectsHeightHistogram = new long[height];
+            // fill them up
+            for (Rectangle rectangle : rectangles) {
+                long areaRect = (long) rectangle.width * (long) rectangle.height;
+                unplacedRectsWidthHistogram[rectangle.width - 1] += areaRect;
+                unplacedRectsHeightHistogram[rectangle.height - 1] += areaRect;
+            }
+        } else {
+            // the histograms are not needed.
+            emptyRowHistogram = null;
+            emptyColumnHistogram = null;
+            unplacedRectsWidthHistogram = null;
+            unplacedRectsWidthHistogram = null;
+        }
+
+        // call first iteration
+        return containmentAlgorithm (width, height, rectangles, 0, emptyRowHistogram, emptyColumnHistogram);
+    }
+
 
     /**
      * A function that solves the containment problem - i.e. given a list of rectangles,
@@ -366,7 +394,7 @@ public class OptimalRectanglePacking2 implements Solver {
      * @return true if the problem can be solved; false otherwise
      */
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles,
-                                         int iteration, long[] rowHistogram, long[] columnHistogram) {
+                                         int iteration, long[] emptyRowHistogram, long[] emptyColumnHistogram) {
 
         if (iteration == rectangles.length) { // a solution of packing the rectangles into the bin has been found
             return true;
@@ -374,11 +402,22 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // Prune the current subtree if the partial solution cannot be
         // extended to a complete solution
-        if (canPruneWastedSpace(width, height, rectangles, rowHistogram, columnHistogram, iteration)) {
-            if (showEachPlacement) {
-                System.out.println("pruned by wasted space");
+
+        // prune based on lower bound on wasted space
+        if (pruneWastedSpace) {
+            if (canPruneWastedSpace(width, height, rectangles, emptyRowHistogram, emptyColumnHistogram, iteration)) {
+                if (showEachPlacement) {
+                    System.out.println("pruned by wasted space");
+                }
+                return false;
             }
-            return false;
+        }
+
+        long areaRect = (long) rectangles[iteration].width * (long) rectangles[iteration].height;
+        if (pruneWastedSpace) {
+            // remove the area from the unplaced rectangle histograms
+            unplacedRectsWidthHistogram[rectangles[iteration].width - 1] -= areaRect;
+            unplacedRectsHeightHistogram[rectangles[iteration].height - 1] -= areaRect;
         }
 
         // Place the next rectangle (from left to right, from bottom to top)
@@ -393,36 +432,45 @@ public class OptimalRectanglePacking2 implements Solver {
                 if (canPlaceAt(x, y, rectangles[iteration], width, height)) {
 
                     // create new histograms for next iteration
-                    long[] newRowHistogram = copyHistogram(rowHistogram);
-                    long[] newColumnHistogram = copyHistogram(columnHistogram);
-                    placeRectangle(x, y, rectangles[iteration], width, height, true,
-                            newRowHistogram, newColumnHistogram);
-                    long area = (long) rectangles[iteration].width * (long) rectangles[iteration].height;
-                    widthUnplacedHistogram[rectangles[iteration].width - 1] -= area;
-                    heightUnplacedHistogram[rectangles[iteration].height - 1] -= area;
+                    long[] newEmptyRowHistogram = copyHistogram(emptyRowHistogram);
+                    long[] newEmptyColumnHistogram = copyHistogram(emptyColumnHistogram);
+                    // place the rectangle
+                    placeRectangle(x, y, rectangles[iteration], width, height,
+                            pruneWastedSpace || pruneDominance,
+                            newEmptyRowHistogram, newEmptyColumnHistogram);
 
                     // call for next iteration
                     if (containmentAlgorithm(width, height, rectangles, iteration + 1,
-                            newRowHistogram, newColumnHistogram)) {
+                            newEmptyRowHistogram, newEmptyColumnHistogram)) {
                         // if this partial solution can be extended to a complete iteration,
                         // send this message up the iteration path
                         return true;
                     } else {
                         // if this partial solution cannot be extended to a complete iteration,
                         // clear the rectangle and continue the loop to try different positions.
-                        clearRectangle(x, y, rectangles[iteration], width, height, true);
+                        clearRectangle(x, y, rectangles[iteration], width, height,
+                                pruneWastedSpace || pruneDominance);
                     }
                 }
             }
         }
 
+
         // the rectangle could not be placed anywhere, so the partial solution could
         // not be extended to a complete solution
+
+        if (pruneWastedSpace) {
+            // add the area to the unplaced rectangle histograms
+            unplacedRectsWidthHistogram[rectangles[iteration].width - 1] += areaRect;
+            unplacedRectsHeightHistogram[rectangles[iteration].height - 1] += areaRect;
+        }
+
         return false;
     }
 
+
     private boolean canPruneWastedSpace(int width, int height, Rectangle[] rectangles,
-                                        long[] rowHistogram, long[] columnHistogram, int iteration) {
+                                        long[] emptyRowHistogram, long[] emptyColumnHistogram, int iteration) {
 
         long wastedArea;
         long carriedArea;
@@ -431,11 +479,14 @@ public class OptimalRectanglePacking2 implements Solver {
         wastedArea = 0;
         carriedArea = 0;
         for (int i = 0; i < width; i++) {
-            if (rowHistogram[i] >= carriedArea + widthUnplacedHistogram[i]) {
-                wastedArea += rowHistogram[i] - carriedArea - widthUnplacedHistogram[i];
+            long difference = emptyRowHistogram[i] - carriedArea - unplacedRectsWidthHistogram[i];
+            if (difference >= 0) {
+                // there are not enough small rectangles to fill the empty space
+                wastedArea += difference;
                 carriedArea = 0;
             } else {
-                carriedArea = carriedArea + widthUnplacedHistogram[i] - rowHistogram[i];
+                // there is not enough empty space for all rectangles up to that size to fit
+                carriedArea = -difference;
             }
         }
         if (wastedArea + totalRectArea > (long) width * (long) height) {
@@ -446,11 +497,14 @@ public class OptimalRectanglePacking2 implements Solver {
         wastedArea = 0;
         carriedArea = 0;
         for (int i = 0; i < height; i++) {
-            if (columnHistogram[i] >= carriedArea + heightUnplacedHistogram[i]) {
-                wastedArea += columnHistogram[i] - carriedArea - heightUnplacedHistogram[i];
+            long difference = emptyColumnHistogram[i] - carriedArea - unplacedRectsHeightHistogram[i];
+            if (difference >= 0) {
+                // there are not enough small rectangles to fill the empty space
+                wastedArea += difference;
                 carriedArea = 0;
             } else {
-                carriedArea = carriedArea + heightUnplacedHistogram[i] - columnHistogram[i];
+                // there is not enough empty space for all rectangles up to that size to fit
+                carriedArea = -difference;
             }
         }
         if (wastedArea + totalRectArea > (long) width * (long) height) {
@@ -466,13 +520,13 @@ public class OptimalRectanglePacking2 implements Solver {
      *
      * @param width
      * @param height
-     * @param placementMatrixOnly
+     * @param
      */
-    private void generateNewMatrices (int width, int height, boolean placementMatrixOnly) {
+    private void generateNewMatrices (int width, int height, boolean includingEmptyMatrices) {
 
         // create new matrices
         placementMatrix = new int[width][height];
-        if (!placementMatrixOnly) {
+        if (includingEmptyMatrices) {
             emptyRowMatrix = new int[width][height];
             emptyColumnMatrix = new int[width][height];
         }
@@ -481,7 +535,7 @@ public class OptimalRectanglePacking2 implements Solver {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 placementMatrix[x][y] = -1;
-                if (!placementMatrixOnly) {
+                if (includingEmptyMatrices) {
                     emptyRowMatrix[x][y] = width;
                     emptyColumnMatrix[x][y] = height;
                 }
@@ -564,13 +618,15 @@ public class OptimalRectanglePacking2 implements Solver {
                     emptyRowMatrix[k][j] = freeCellsRight;
                 }
 
-                // update row histogram
-                rowHistogram[emptyRowMatrix[x][j] - 1] -= emptyRowMatrix[x][j];
-                if (freeCellsLeft > 0) {
-                    rowHistogram[freeCellsLeft - 1] += freeCellsLeft;
-                }
-                if (freeCellsRight > 0) {
-                    rowHistogram[freeCellsRight - 1] += freeCellsRight;
+                if (pruneWastedSpace) {
+                    // update row histogram
+                    rowHistogram[emptyRowMatrix[x][j] - 1] -= emptyRowMatrix[x][j];
+                    if (freeCellsLeft > 0) {
+                        rowHistogram[freeCellsLeft - 1] += freeCellsLeft;
+                    }
+                    if (freeCellsRight > 0) {
+                        rowHistogram[freeCellsRight - 1] += freeCellsRight;
+                    }
                 }
             }
 
@@ -593,13 +649,15 @@ public class OptimalRectanglePacking2 implements Solver {
                     emptyColumnMatrix[i][l] = freeCellsAbove;
                 }
 
-                // update column histogram
-                columnHistogram[emptyColumnMatrix[i][y] - 1] -= emptyColumnMatrix[i][y];
-                if (freeCellsBelow > 0) {
-                    columnHistogram[freeCellsBelow - 1] += freeCellsBelow;
-                }
-                if (freeCellsAbove > 0) {
-                    columnHistogram[freeCellsAbove - 1] += freeCellsAbove;
+                if (pruneWastedSpace) {
+                    // update column histogram
+                    columnHistogram[emptyColumnMatrix[i][y] - 1] -= emptyColumnMatrix[i][y];
+                    if (freeCellsBelow > 0) {
+                        columnHistogram[freeCellsBelow - 1] += freeCellsBelow;
+                    }
+                    if (freeCellsAbove > 0) {
+                        columnHistogram[freeCellsAbove - 1] += freeCellsAbove;
+                    }
                 }
             }
 

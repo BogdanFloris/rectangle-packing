@@ -1,5 +1,5 @@
 container height: free
-rotations allowed: yes
+rotations allowed: no
 number of rectangles: 8
 10 6
 12 8
@@ -10,11 +10,11 @@ number of rectangles: 8
 14 21
 5 5
 placement of rectangles
-no 0 32
-yes 0 14
-yes 8 22
-no 0 26
-yes 8 14
-no 17 22
-yes 0 0
-no 10 32
+18 8
+18 0
+28 12
+19 14
+30 0
+14 0
+0 0
+14 16

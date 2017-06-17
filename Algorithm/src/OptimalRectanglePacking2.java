@@ -13,7 +13,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
     // prints out a.o. the placement matrix, for debugging purposes
     private static boolean showEachPlacement = false;
-    private static boolean showFeasibleSolutions = false;
+    private static boolean showFeasibleSolutions = true;
 
     // controls what pruning methods are used, for experimentation purposes
     private static boolean pruneWastedSpace = true;
@@ -41,7 +41,7 @@ public class OptimalRectanglePacking2 implements Solver {
     private long[] unplacedRectsWidthHistogram;
     private long[] unplacedRectsHeightHistogram;
 
-    private int[] histogram;
+    private boolean searchWideToTall = true;
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {
@@ -114,7 +114,7 @@ public class OptimalRectanglePacking2 implements Solver {
                         }
                     }
 
-                    // comupte optimal packing
+                    // compute optimal packing
                     Pair<Rectangle[], Rectangle> solution = anytimeSolution(arr);
 
                     // check if this rotation combination is better
@@ -175,10 +175,6 @@ public class OptimalRectanglePacking2 implements Solver {
         height = optimalBin.height;
         width = optimalBin.width;
 
-        if (showFeasibleSolutions) {
-            printPlacementMatrix(placementMatrix);
-        }
-
         // sort rectangles on area (descending)
         Rectangle[] sortedRects = copyRectangles(rectangles);
         Arrays.sort( sortedRects, new Comparator<Rectangle>() {
@@ -192,9 +188,10 @@ public class OptimalRectanglePacking2 implements Solver {
         // start trying smaller and smaller bounding boxes
 
         // determine when to stop shrinking the rectangle
-        int minWidth = 0; // the minimal width the bounding box should have
+        int minimum = 0; // the minimal width/height the bounding box should have
         for (Rectangle rectangle : sortedRects) {
-            minWidth = Math.max(minWidth, rectangle.width); // every rectangle needs to fit in the bounding box
+            minimum = Math.max(minimum, searchWideToTall ? rectangle.width : rectangle.height);
+            // every rectangle needs to fit in the bounding box
         }
 
         // whether the previous bounding box tried can pack all rectangles without overlap
@@ -205,22 +202,25 @@ public class OptimalRectanglePacking2 implements Solver {
 
             // change dimensions bounding box
             if (feasible) {
-                // decrease width until area is smaller than the area of the optimal bounding box
+                // decrease width/height until area is smaller than the area of the optimal bounding box
                 while ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height) {
-                    width--;    // shrink bounding box
+                    // shrink bounding box
+                    if (searchWideToTall) { width--; } else { height--; }
                 }
-                if (width < minWidth) {
+                if (searchWideToTall ? (width < minimum) : (height < minimum) ) {
                     break;  // no smaller bounding box possible
                 }
             } else {
-                // increase height by one (only if height is not fixed)
-                if (fixedHeight == 0) {
-                    height++;   // enlarge bounding box
-                    // decrease width until area is smaller than the area of the optimal bounding box
+                // increase height/width by one (only if height is not fixed)/(no restriction on width)
+                if (!searchWideToTall || fixedHeight == 0) {
+                    // enlarge bounding box
+                    if (searchWideToTall) { height++; } else { width++; }
+                    // decrease width/height until area is smaller than the area of the optimal bounding box
                     while ((long) width * (long) height >= (long) optimalBin.width * (long) optimalBin.height) {
-                        width--;    // shrink bounding box
+                        // shrink bounding box
+                        if (searchWideToTall) { width--; } else { height--; }
                     }
-                    if (width < minWidth) {
+                    if (searchWideToTall ? (width < minimum) : (height < minimum) ) {
                         break;  // no smaller bounding box possible
                     }
 
@@ -280,6 +280,9 @@ public class OptimalRectanglePacking2 implements Solver {
 
         Rectangle[] sortedRects = copyRectangles(rectangles);
 
+        // try a wide greedy solution first
+        searchWideToTall = true;
+
         // sort the rectangles by height (descending)
         Arrays.sort(sortedRects, new Comparator<Rectangle>() {
             @Override
@@ -292,14 +295,14 @@ public class OptimalRectanglePacking2 implements Solver {
         int maxWidth = 0;
         for (Rectangle rectangle : sortedRects) {
             maxWidth += rectangle.width;     // rectangles have a width of at most 10^4, so if
-                                            // the number of rectangles is less than 214748, an integer for maxWidth suffices
+            // the number of rectangles is less than 214748, an integer for maxWidth suffices
         }
 
         // create a new placement matrix
         generateNewMatrices(maxWidth, height, false);
 
         // greedily place rectangles, from bottom to top, from left to right
-        rectangle_loop:
+        rectangle_loop_wide:
         for (int i = 0; i < sortedRects.length; i++) {
             for (int x = 0; x < maxWidth; x++) {
                 for (int y = 0; y < height; y++) {
@@ -315,11 +318,17 @@ public class OptimalRectanglePacking2 implements Solver {
                         // place the rectangle!
                         placeRectangle(x, y, sortedRects[i], maxWidth, height,
                                 false, null, null);
-                        continue rectangle_loop;    // place the next rectangle
+                        continue rectangle_loop_wide;    // place the next rectangle
                     }
 
                 }
             }
+        }
+
+        // print the greedy solution
+        if (showFeasibleSolutions) {
+            printPlacementMatrix(placementMatrix);
+            System.out.println("greedy wide");
         }
 
         // determine the width of the current bounding box
@@ -328,13 +337,82 @@ public class OptimalRectanglePacking2 implements Solver {
             width = Math.max(width, rectangle.x + rectangle.width);
         }
 
+        // create the bounding box
+        Rectangle boundingBox = new Rectangle(width, height, -1);
+
+        // try a tall greedy solution second
+        if (fixedHeight == 0) {
+            // sort the rectangles by width (descending)
+            Arrays.sort(sortedRects, new Comparator<Rectangle>() {
+                @Override
+                public int compare(Rectangle o1, Rectangle o2) {
+                    return o2.width - o1.width;
+                }
+            });
+
+            width = sortedRects[0].width;
+            int maxHeight = 0;
+            for (Rectangle rectangle : sortedRects) {
+                maxHeight += rectangle.height;  // rectangles have a height of at most 10^4, so if
+                // the number of rectangles is less than 214748, an integer for maxHeight suffices
+            }
+
+            // create a new placement matrix
+            generateNewMatrices(width, maxHeight, false);
+
+            // greedily place rectangles, from left to right, from bottom to top
+            rectangle_loop_tall:
+            for (int i = 0; i < sortedRects.length; i++) {
+                for (int y = 0; y < maxHeight; y++) {
+                    for (int x = 0; x < width; x++) {
+
+                        // skip spaces that are already occupied by other rectangles
+                        if (placementMatrix[x][y] >= 0) {
+                            x += mapWidth.get(placementMatrix[x][y]) - 1;
+                            continue;                   // try next coordinates
+                        }
+
+                        // check if it can be placed
+                        if (canPlaceAt(x, y, sortedRects[i], width, maxHeight)) {
+                            // place the rectangle!
+                            placeRectangle(x, y, sortedRects[i], width, maxHeight,
+                                    false, null, null);
+                            continue rectangle_loop_tall;   // place the next rectangle
+                        }
+
+                    }
+                }
+            }
+
+            // determine the height of the current bounding box
+            height = 0;
+            for (Rectangle rectangle : sortedRects) {
+                height = Math.max(height, rectangle.y + rectangle.height);
+            }
+
+            // print the greedy solution
+            if (showFeasibleSolutions) {
+                printPlacementMatrix(placementMatrix);
+                System.out.println("greedy tall");
+            }
+
+            // compare to previous greedy solution
+            if ((long) width * (long) height < (long) boundingBox.width * (long) boundingBox.height) {
+                // if it is better
+                searchWideToTall = false;                               // reverse the search order
+                boundingBox = new Rectangle(width, height, -1);    // set up new bounding box
+            }
+        }
+
+        // show which direction we should search in
+        if (showFeasibleSolutions) {
+            System.out.println("\nsearch " + (searchWideToTall ? "wide-to-tall" : "tall-to-wide"));
+        }
+
         // unsort the rectangles
         for (int i = 0; i < rectangles.length; i++) {
             rectangles[sortedRects[i].index] = copyRectangle(sortedRects[i]);
         }
-
-        // create the bounding box
-        Rectangle boundingBox = new Rectangle(width, height, -1);
 
         // return optimal solution
         return new Pair<Rectangle[], Rectangle> (rectangles, boundingBox);

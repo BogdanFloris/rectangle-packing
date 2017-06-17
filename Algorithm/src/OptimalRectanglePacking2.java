@@ -47,10 +47,8 @@ public class OptimalRectanglePacking2 implements Solver {
 
     private boolean searchWideToTall = true;
 
-    private Rectangle globalOptimum; // currently the best boudning box. Stored globally to be able
-                                    // to prune out weak solutions in case rotations are allowed
-                                    // Actual solution (i.e. rectangle placements and orientations are still stored locally)
-    private Rectangle[] globalSolution;
+    private Rectangle globalOptimum;        // best bounding box found up to this point
+    private Rectangle[] globalSolution;     // best placement of rectangles found up to this point
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {

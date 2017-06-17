@@ -64,6 +64,7 @@ public class MaximalRectanglesAlgorithm implements Solver {
     private int binHeight;                              // the height of the enclosing rectangle
     private ArrayList<Rectangle> usedRectangles;        // list of used rectangles
     private ArrayList<Rectangle> freeRectangles;        // list of free rectangles
+    private int fixedHeight;                            // value of the fixed height
 
     /**
      * List of heuristics to be used when choosing what free rectangle to currently fill.
@@ -94,67 +95,82 @@ public class MaximalRectanglesAlgorithm implements Solver {
 
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
-        // the initial values of the bin
-        int width = binWidth, height = binHeight;
+        int bestWidth = Integer.MAX_VALUE;
+        int bestHeight = Integer.MAX_VALUE;
+        Rectangle[] orderedRectangles = null;
 
-        // the array in which the rectangles have updated (x, y) coordinates
-        Rectangle[] orderedRectangles;
+        for (FreeRectangleHeuristic heuristic : FreeRectangleHeuristic.values()) {
+            binWidth = 0;
+            binHeight = 0;
 
-        // the initial width/height of the bin
-        // will be equal to the length of the smallest
-        // side of the biggest rectangle
-        int startValue = Integer.MIN_VALUE;
-        for (int i = 0; i < rectangles.length; i++) {
-            int value = Math.min(rectangles[i].width, rectangles[i].height);
-            if (startValue < value) {
-                startValue = value;
+            if (this.isHeightFixed) {
+                this.binHeight = fixedHeight;
+            }
+
+            // the initial values of the bin
+            int width = binWidth, height = binHeight;
+
+            // the array in which the rectangles have updated (x, y) coordinates
+            Rectangle[] currentArr = null;
+
+            // the initial width/height of the bin
+            // will be equal to the length of the smallest
+            // side of the biggest rectangle
+            int startValue = Integer.MIN_VALUE;
+            for (int i = 0; i < rectangles.length; i++) {
+                int value = Math.min(rectangles[i].width, rectangles[i].height);
+                if (startValue < value) {
+                    startValue = value;
+                }
+            }
+
+            width = startValue;
+            if (!this.isHeightFixed) {
+                height = startValue;
+            }
+
+            ArrayList<Rectangle> arr = new ArrayList<>();
+            arr.addAll(Arrays.asList(rectangles));
+
+            // do some pre-processing
+            preprocess(arr, PreprocessHeuristic.DESCSS);
+
+            // each iteration only one of: width, height will be updated
+            boolean turn = true;
+
+            // try bins until we find one in which all the rectangles fit
+            do {
+                if (this.isHeightFixed) { // only increase the width if the height is fixed
+                    init(width, height);
+
+                    width++;
+                } else { // increase width and height alternatively if the height is free
+                    init(width, height);
+
+                    if (turn) width++;
+                    else height++;
+
+                    turn = !turn;
+                }
+            } while ((currentArr = insertRectangles(new ArrayList<>(arr),
+                    heuristic)) == null);
+
+            if (bestWidth == Integer.MAX_VALUE ||
+                    ((long) binWidth * (long) binHeight <
+                            (long) bestWidth * (long) bestHeight)) {
+                bestWidth = binWidth;
+                bestHeight = binHeight;
+                orderedRectangles = Arrays.copyOf(currentArr, currentArr.length);
             }
         }
-
-        width = startValue;
-        if (!this.isHeightFixed) {
-            height = startValue;
-        }
-
-        ArrayList<Rectangle> arr = new ArrayList<>();
-        arr.addAll(Arrays.asList(rectangles));
-
-        // do some pre-processing
-        preprocess(arr, PreprocessHeuristic.DESCSS);
-
-        // each iteration only one of: width, height will be updated
-        boolean turn = true;
-
-        // try bins until we find one in which all the rectangles fit
-        do {
-            if (this.isHeightFixed) { // only increase the width if the height is fixed
-                init(width, height);
-
-                width++;
-            } else { // increase width and height alternatively if the height is free
-                init(width, height);
-
-                if (turn) width++;
-                else height++;
-
-                turn = !turn;
-            }
-        } while ((orderedRectangles = insertRectangles(new ArrayList<>(arr),
-                FreeRectangleHeuristic.BestAreaFit)) == null);
 
         return orderedRectangles;
     }
 
     public MaximalRectanglesAlgorithm(boolean areRotationsAllowed, int fixedHeight) {
-        this.binWidth = 0;
-        this.binHeight = 0;
-
         this.areRotationsAllowed = areRotationsAllowed;
         this.isHeightFixed = (fixedHeight == 0) ? false : true;
-
-        if (this.isHeightFixed) {
-            this.binHeight = fixedHeight;
-        }
+        this.fixedHeight = fixedHeight;
     }
 
     /**

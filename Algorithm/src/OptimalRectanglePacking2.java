@@ -109,12 +109,12 @@ public class OptimalRectanglePacking2 implements Solver {
                     for (int bit = 0; bit < n; ++bit) {
                         if ((combination & (1 << bit)) > 0) {
                             arr[bit].rotate();
+                        }
 
-                            // discard this combination if the height of the rectangle
-                            // is larger than the fixed height
-                            if (fixedHeight > 0 && arr[bit].height > fixedHeight) {
-                                continue outer_combination;
-                            }
+                        // discard this combination if the height of the rectangle
+                        // is larger than the fixed height
+                        if (fixedHeight > 0 && arr[bit].height > fixedHeight) {
+                            continue outer_combination;
                         }
                     }
 

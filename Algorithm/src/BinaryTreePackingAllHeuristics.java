@@ -20,11 +20,13 @@ public class BinaryTreePackingAllHeuristics implements Solver {
         Rectangle[] copyWidth = new Rectangle[rectangles.length];
         Rectangle[] copyHeight = new Rectangle[rectangles.length];
         Rectangle[] copyMaxside = new Rectangle[rectangles.length];
+        Rectangle[] copyArea = new Rectangle[rectangles.length];
 
         for (int i = 0; i < rectangles.length; i++) {
             copyWidth[i] = new Rectangle(rectangles[i].width, rectangles[i].height, rectangles[i].index);
             copyHeight[i] = new Rectangle(rectangles[i].width, rectangles[i].height, rectangles[i].index);
             copyMaxside[i] = new Rectangle(rectangles[i].width, rectangles[i].height, rectangles[i].index);
+            copyArea[i] = new Rectangle(rectangles[i].width, rectangles[i].height, rectangles[i].index);
         }
 
         // compute the placement for WIDTH heuristic
@@ -48,8 +50,16 @@ public class BinaryTreePackingAllHeuristics implements Solver {
         int wastedSpaceMaxside = (((BinaryTreeBinPacking) solverMaxside).getEnclosingRectangle().width *
                 ((BinaryTreeBinPacking) solverMaxside).getEnclosingRectangle().height) - areaRects;
 
+        // computer the placement for AREA heuristic
+        Solver solverArea = new BinaryTreeBinPacking(
+                this.rotations, this.fixedHeight, BinaryTreeBinPacking.SortingHeuristic.AREA);
+        Rectangle[] placementArea = solverArea.solver(copyArea);
+        int wastedSapceArea = (((BinaryTreeBinPacking) solverArea).getEnclosingRectangle().width *
+                ((BinaryTreeBinPacking) solverArea).getEnclosingRectangle().height) - areaRects;
+
         // compute the least wasted space
-        int leastWastedSpace = Math.min(wastedSpaceWidth, Math.min(wastedSpaceHeight, wastedSpaceMaxside));
+        int leastWastedSpace = Math.min(wastedSpaceWidth,
+                Math.min(wastedSpaceHeight, Math.min(wastedSpaceMaxside, wastedSapceArea)));
 
         //return the best placement
         if (leastWastedSpace == wastedSpaceWidth) {
@@ -57,6 +67,9 @@ public class BinaryTreePackingAllHeuristics implements Solver {
         }
         else if (leastWastedSpace == wastedSpaceHeight) {
             return placementHeight;
+        }
+        else if (leastWastedSpace == wastedSapceArea) {
+            return placementArea;
         }
         else {
             return placementMaxside;

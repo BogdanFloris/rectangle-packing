@@ -6,3 +6,9 @@ number of rectangles: 5
 3 9
 1 9
 1 19
+placement of rectangles
+no 4 6
+yes 1 0
+no 1 6
+no 5 6
+no 0 0

@@ -1,0 +1,5 @@
+test file: src/tests/unoriented double-perimeter_55214.in
+rotations: allowed
+height: free
+algorithm: Maximal Rectangles Algorithm
+running time: 0.35815260 seconds

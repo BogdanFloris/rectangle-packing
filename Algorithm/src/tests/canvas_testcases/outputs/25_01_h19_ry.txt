@@ -26,3 +26,29 @@ number of rectangles: 25
 30 4
 12 1
 30 8
+placement of rectangles
+no 30 13
+no 48 2
+yes 60 17
+yes 27 14
+no 51 16
+no 48 0
+no 44 1
+yes 39 16
+no 42 2
+no 42 18
+no 0 0
+no 0 18
+no 51 17
+no 0 14
+no 39 14
+no 30 2
+no 22 18
+no 0 1
+no 51 10
+no 52 2
+yes 54 18
+yes 51 2
+no 0 10
+yes 50 2
+no 0 2

@@ -1,9 +1,6 @@
-import org.w3c.dom.css.Rect;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.OptionalInt;
 
 /**
  * Improvement on previous optimal rectangle packer, created as a separate class as not to
@@ -12,7 +9,6 @@ import java.util.OptionalInt;
  */
 
 public class OptimalRectanglePacking2 implements Solver {
-
 
     // prints out a.o. the placement matrix, for debugging purposes
     private static boolean showEachPlacement = false;
@@ -96,7 +92,7 @@ public class OptimalRectanglePacking2 implements Solver {
         globalOptimum = (fixedHeight == 0) ?
                 new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
                 new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
-        globalSolution = null;
+        globalSolution = rectangles;    // set the original rectangles as the best solution to start with
 
         if (anytime) {
             if (rotationsAllowed) {
@@ -525,15 +521,15 @@ public class OptimalRectanglePacking2 implements Solver {
         // prune based on dominance conditions with perfect rectangles of empty space
         if (pruneDominancePerfectRectangles) {
             if (iteration > 0) {
-                if (canPruneDominanceEmptySpaceBottom(rectangles[iteration - 1], width, height)) {
+                if (canPruneDominancePerfectRectanglesBottom(rectangles[iteration - 1], width)) {
                     if (showEachPlacement) {
-                        System.out.println("pruned by dominance empty space BOTTOM");
+                        System.out.println("pruned by dominance perfect rectangles BOTTOM");
                     }
                     return false;
                 }
-                if (canPruneDominanceEmptySpaceLeft(rectangles[iteration - 1], width, height)) {
+                if (canPruneDominancePerfectRectanglesLeft(rectangles[iteration - 1], height)) {
                     if (showEachPlacement) {
-                        System.out.println("pruned by dominance empty space LEFT");
+                        System.out.println("pruned by dominance perfect rectangles LEFT");
                     }
                     return false;
                 }
@@ -596,90 +592,120 @@ public class OptimalRectanglePacking2 implements Solver {
         return false;
     }
 
-    private boolean canPruneDominanceEmptySpaceBottom(Rectangle rectangle, int width, int height) {
+    private boolean canPruneDominancePerfectRectanglesBottom(Rectangle rectangle, int width) {
         // cannot prune if already at the bottom
         if (rectangle.y == 0) {
             return false;
         }
-        // check the bottom of the rectangle.
-        for (int j = rectangle.y; j > 0; j--) {
-            int count = 0;
-            // if there is an empty space to the sides of the empty space return false
 
+        // check the bottom of the rectangle, row by row
+        for (int j = rectangle.y - 1; j >= 0; j--) {
+
+            // if there is an empty space to the sides of the empty space return false
+            // check sides
             if (rectangle.x == 0 && (rectangle.x + rectangle.width) == width) {
+                // on the left and on the right the rectangle is squished
+                // tight between the edges of the bounding box
             } else if (rectangle.x == 0) {
+                // on the left the rectangle is pushed against the side of the bounding box
+                // check if the right side is filled by another rectangle
                 if (placementMatrix[rectangle.x + rectangle.width][j] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else if (rectangle.x + rectangle.width == width) {
+                // on the right the rectangle is pushed against the side of the bounding box
+                // check if the left side is filled by another rectangle
                 if (placementMatrix[rectangle.x - 1][j] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else {
+                // check if both sides are filled by other rectangles
                 if (placementMatrix[rectangle.x - 1][j] == -1 ||
                         placementMatrix[rectangle.x + rectangle.width][j] == -1) {
+                    return false;   // not filled, we cannot prune
+                }
+            }
+
+            // check how much cells under the rectangle in this row are filled
+            if (placementMatrix[rectangle.x][j] == -1 ) {
+                if (emptyRowMatrix[rectangle.x][j] == rectangle.width) {
+                    // the entire row is empty, we can continue the loop
+                    continue;
+                } else {
+                    // the first cell is empty, but not all are empty
+                    // thus no solid wall is present, we cannot prune
                     return false;
                 }
             }
 
-            for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++) {
-                if (placementMatrix[i][j] > 0) {
-                    count++;
+            // first cell is filled, we now check if the rest of the cells are as well
+            for (int i = rectangle.x + 1; i < rectangle.x + rectangle.width; i++) {
+                if (placementMatrix[i][j] == -1) {
+                    return false;                   // a gap, we cannot prune
                 }
             }
-            // we have hit a solid wall
-            if (count == rectangle.width) {
-                return true;
-            }
-            if (count > 0 && count < rectangle.width) {
-                return false;
-            }
+            return true;    // hit a solid wall
+
         }
-        return true;
+        return true;    // hit the bottom of the bounding box
     }
 
-    private boolean canPruneDominanceEmptySpaceLeft(Rectangle rectangle, int width, int height) {
-        // cant prune if already at the left
+
+    private boolean canPruneDominancePerfectRectanglesLeft(Rectangle rectangle, int height) {
+        // cannot prune if already at the left
         if (rectangle.x == 0) {
             return false;
         }
-        // check the left of the rectangle.
-        for (int i = rectangle.x; i > 0; i--) {
-            // if there is an empty space to the sides of the empty space return false
-//            System.out.println("Rectangle.y: " + rectangle.y);
-//            System.out.println("Rectangle.height: " + rectangle.height);
-//            System.out.println("height: " + height);
 
+        // check the left of the rectangle.
+        for (int i = rectangle.x - 1; i >= 0; i--) {
+            // if there is an empty space to the sides of the empty space return false
+            // check sides
             if (rectangle.y == 0 && (rectangle.y + rectangle.height) == height) {
+                // on the bottom and on the top the rectangle is squished
+                // tight between the edges of the bounding box
             } else if (rectangle.y == 0) {
+                // on the bottom the rectangle is pushed against the side of the bounding box
+                // check if the top is filled by another rectangle
                 if (placementMatrix[i][rectangle.y + rectangle.height] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else if (rectangle.y + rectangle.height == height) {
+                // on the top the rectangle is pushed against the side of the bounding box
+                // check if the bottom is filled by another rectangle
                 if (placementMatrix[i][rectangle.y - 1] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else {
+                // check if both sides are filled by other rectangles
                 if (placementMatrix[i][rectangle.y - 1] == -1 ||
                         placementMatrix[i][rectangle.y + rectangle.height] == -1) {
+                    return false;   // not filled, we cannot prune
+                }
+            }
+
+            // check how much cells left of the rectangle in this column are filled
+            if (placementMatrix[i][rectangle.y] == -1 ) {
+                if (emptyColumnMatrix[i][rectangle.y] == rectangle.height) {
+                    // the entire column is empty, we can continue the loop
+                    continue;
+                } else {
+                    // the first cell is empty, but not all are empty
+                    // thus no solid wall is present, we cannot prune
                     return false;
                 }
             }
-            int count = 0;
-            for (int j = rectangle.y; j < rectangle.y + rectangle.height; j++) {
-                if (placementMatrix[i][j] > 0) {
-                    count++;
+
+            // first cell is filled, we now check if the rest of the cells are as well
+            for (int j = rectangle.y + 1; j < rectangle.y + rectangle.height; j++) {
+                if (placementMatrix[i][j] == -1) {
+                    return false;                   // a gap, we cannot prune
                 }
             }
-            // we have hit a solid wall
-            if (count == rectangle.height) {
-                return true;
-            }
-            if (count > 0 && count < rectangle.height) {
-                return false;
-            }
+            return true;    // hit a solid wall
+
         }
-        return true;
+        return true;    // hit the left of the bounding box
     }
 
     // TODO: This pruning function is only applicable for
@@ -1006,9 +1032,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
     }
 
-    private Pair<Rectangle[], Rectangle> iterativeSolution(Rectangle[] rectangles) {
-        return null;
-    }
+    private void iterativeSolution(Rectangle[] rectangles) { /** do nothing */  }
 
     /**
      * Create a copy of the supplied array of rectangles.

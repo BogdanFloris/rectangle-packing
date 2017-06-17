@@ -1,3 +1,5 @@
+import org.w3c.dom.css.Rect;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,6 +17,7 @@ public class OptimalRectanglePacking2 implements Solver {
     // prints out a.o. the placement matrix, for debugging purposes
     private static boolean showEachPlacement = false;
     private static boolean showFeasibleSolutions = false;
+    private static boolean showGreedy = false;
 
     // controls what pruning methods are used, for experimentation purposes
     private static boolean pruneWastedSpace = true;
@@ -47,6 +50,7 @@ public class OptimalRectanglePacking2 implements Solver {
     private Rectangle globalOptimum; // currently the best boudning box. Stored globally to be able
                                     // to prune out weak solutions in case rotations are allowed
                                     // Actual solution (i.e. rectangle placements and orientations are still stored locally)
+    private Rectangle[] globalSolution;
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {
@@ -90,15 +94,15 @@ public class OptimalRectanglePacking2 implements Solver {
             totalRectArea += rectangle.width * rectangle.height;
         }
 
+        // set up global variables that store the best solution
+        globalOptimum = (fixedHeight == 0) ?
+                new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
+                new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
+        globalSolution = null;
+
         if (anytime) {
             if (rotationsAllowed) {
                 int n = rectangles.length;
-
-                // set up local variables that store the best solution
-                globalOptimum = (fixedHeight == 0) ?
-                        new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
-                        new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
-                Rectangle[] optimalSolution = null;
 
                 // find the optimal solution for each combination of rotations
                 outer_combination:
@@ -119,35 +123,25 @@ public class OptimalRectanglePacking2 implements Solver {
                     }
 
                     // compute optimal packing
-                    Pair<Rectangle[], Rectangle> solution = anytimeSolution(arr);
+                    anytimeSolution(arr);
 
                     if (PackingSolver.usesTimer && PackingSolver.algorithmInterrupted) {
-                        return null;
-                    }
-
-                    // check if this rotation combination is better
-                    // (because globalOptimum is also used during the anytime algorithm,
-                    //  it is always better or equally good than the localOptimum that is returned)
-                    if ((long) globalOptimum.width * (long) globalOptimum.height ==
-                            (long) solution.second.width * (long) solution.second.height) {
-
-                        // update optimal rectangle placement
-                        optimalSolution = copyRectangles(solution.first);
-
+                        // break out of the algorithm
+                        break;
                     }
 
                 }
 
-                return optimalSolution;
-
             } else {
                 // compute optimal packing
-                return anytimeSolution(rectangles).first;
+                anytimeSolution(rectangles);
             }
         } else {
             // TODO (Maybe) Implement the iterative solution
-            return iterativeSolution(rectangles).first;
+            iterativeSolution(rectangles);
         }
+
+        return globalSolution;
     }
 
 
@@ -157,13 +151,9 @@ public class OptimalRectanglePacking2 implements Solver {
      * Can be stopped at anytime to get a pretty good enclosing bin.
      *
      * @param rectangles the given array of rectangles
-     * @return an array in which rectangles are placed optimally along with the enclosing bin
      */
-    private Pair<Rectangle[], Rectangle> anytimeSolution(Rectangle[] rectangles) {
+    private void anytimeSolution(Rectangle[] rectangles) {
 
-        // set up the local variables that store the optimal solution
-        Rectangle localOptimum;
-        Rectangle[] optimalPlacement;
         // variables to store the size of the bounding box being tested currently
         int height;
         int width;
@@ -179,13 +169,13 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // generate a greedy solution to start with
         Pair<Rectangle[], Rectangle> greedySolution = getGreedySolution(rectangles);
-        // store results (best solution so far)
-        optimalPlacement = greedySolution.first;
-        localOptimum = greedySolution.second;
+        Rectangle localOptimum = greedySolution.second;
         // store localOptimum as globalOptimum if it is better
         if ((long) localOptimum.width * (long) localOptimum.height < (long) globalOptimum.width * (long) globalOptimum.height) {
             globalOptimum.width = localOptimum.width;
             globalOptimum.height = localOptimum.height;
+            // store placement rectangles
+            globalSolution = copyRectangles(greedySolution.first);
         }
         // store current bounding box size
         width = localOptimum.width;
@@ -214,9 +204,12 @@ public class OptimalRectanglePacking2 implements Solver {
 
         change_bin:
         while (true) {
+
+            // stop and run a faster algorithm
             if (PackingSolver.usesTimer && PackingSolver.algorithmInterrupted) {
-                return null;
+                break;
             }
+
             // change dimensions bounding box
             if (feasible) {
                 // decrease width/height until area is smaller than the area of the optimal bounding box
@@ -265,16 +258,13 @@ public class OptimalRectanglePacking2 implements Solver {
             // if the bounding box is feasible, store the new solution as the optimal solution
             // (it is optimal because we only test bounding boxes with a smaller area)
             if (feasible) {
-                // store new bounding box
-                localOptimum.width = width;
-                localOptimum.height = height;
-                // also store in global optimum, which is consistent, as we only check smaller bounding boxes
+                // store in global optimum, which is consistent, as we only check smaller bounding boxes
                 globalOptimum.width = width;
                 globalOptimum.height = height;
 
                 // store solution (unsorted)
                 for (int i = 0; i < sortedRects.length; i++) {
-                    optimalPlacement[sortedRects[i].index] = copyRectangle(sortedRects[i]);
+                    globalSolution[sortedRects[i].index] = copyRectangle(sortedRects[i]);
                 }
 
                 if (showFeasibleSolutions) {
@@ -283,9 +273,7 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         }
 
-        // return optimal solution
-        return new Pair<> (optimalPlacement, localOptimum);     // TODO: Jelle: If we store the best results in the globalOptimum,
-                                                                // TODO: then do we need to return the localOptimum? I don't think so..
+        // all possible bounding boxes have been tested
     }
 
     /**
@@ -345,7 +333,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
 
         // print the greedy solution
-        if (showFeasibleSolutions) {
+        if (showGreedy) {
             printPlacementMatrix(placementMatrix);
             System.out.println("greedy wide");
         }
@@ -410,7 +398,7 @@ public class OptimalRectanglePacking2 implements Solver {
             }
 
             // print the greedy solution
-            if (showFeasibleSolutions) {
+            if (showGreedy) {
                 printPlacementMatrix(placementMatrix);
                 System.out.println("greedy tall");
             }
@@ -424,7 +412,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
 
         // show which direction we should search in
-        if (showFeasibleSolutions) {
+        if (showGreedy) {
             System.out.println("\nsearch " + (searchWideToTall ? "wide-to-tall" : "tall-to-wide"));
         }
 

@@ -21,8 +21,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
     // controls what pruning methods are used, for experimentation purposes
     private static boolean pruneWastedSpace = true;
-    private static boolean pruneDominance = false;
-    private static boolean pruneDominanceEmptySpace = true;
+    private static boolean pruneDominancePerfectRectangles = true;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -430,7 +429,7 @@ public class OptimalRectanglePacking2 implements Solver {
         // set up stuff for the containment algorithm
 
         // generate new matrices
-        generateNewMatrices(width, height, pruneWastedSpace || pruneDominance);
+        generateNewMatrices(width, height, pruneWastedSpace || pruneDominancePerfectRectangles);
 
         // create new histograms empty space (used for pruning wasted space)
         long[] emptyRowHistogram;
@@ -523,8 +522,9 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         }
 
-        if (iteration > 0) {
-            if (pruneDominanceEmptySpace) {
+        // prune based on dominance conditions with perfect rectangles of empty space
+        if (pruneDominancePerfectRectangles) {
+            if (iteration > 0) {
                 if (canPruneDominanceEmptySpaceBottom(rectangles[iteration - 1], width, height)) {
                     if (showEachPlacement) {
                         System.out.println("pruned by dominance empty space BOTTOM");
@@ -563,7 +563,7 @@ public class OptimalRectanglePacking2 implements Solver {
                     long[] newEmptyColumnHistogram = copyHistogram(emptyColumnHistogram);
                     // place the rectangle
                     placeRectangle(x, y, rectangles[iteration], width, height,
-                            pruneWastedSpace || pruneDominance,
+                            pruneWastedSpace || pruneDominancePerfectRectangles,
                             newEmptyRowHistogram, newEmptyColumnHistogram);
 
 
@@ -577,7 +577,7 @@ public class OptimalRectanglePacking2 implements Solver {
                         // if this partial solution cannot be extended to a complete iteration,
                         // clear the rectangle and continue the loop to try different positions.
                         clearRectangle(x, y, rectangles[iteration], width, height,
-                                pruneWastedSpace || pruneDominance);
+                                pruneWastedSpace || pruneDominancePerfectRectangles);
                     }
                 }
             }
@@ -597,7 +597,7 @@ public class OptimalRectanglePacking2 implements Solver {
     }
 
     private boolean canPruneDominanceEmptySpaceBottom(Rectangle rectangle, int width, int height) {
-        // cant prune if already at the bottom
+        // cannot prune if already at the bottom
         if (rectangle.y == 0) {
             return false;
         }
@@ -682,6 +682,8 @@ public class OptimalRectanglePacking2 implements Solver {
         return true;
     }
 
+    // TODO: This pruning function is only applicable for
+    // TODO: dominance pruning with narrow strips of empty space
     // This code currently does not work.
     private boolean canPruneDominanceTop(Rectangle rectangle, int width, int height) {
         // The rectangle is at the bottom of the bounding box.
@@ -710,6 +712,8 @@ public class OptimalRectanglePacking2 implements Solver {
         return false;
     }
 
+    // TODO: This pruning function is only applicable for
+    // TODO: dominance pruning with narrow strips of empty space
     // This code currently does not work.
     private boolean canPruneDominanceRight(Rectangle rectangle, int width, int height) {
         // The rectangle is at the left of the bounding box.

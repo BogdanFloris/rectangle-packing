@@ -10,17 +10,17 @@ public class Result {
     private Reader reader;
     private String text;
 
-    public int height = 0;
+    public long height = 0;
     public boolean heightFixed = false;
     public boolean rotations;
     public int n;
 
     public PackingRectangle[] rectangles;
 
-    public int width = 0;
-    public int area;
-    public int filledSpace = 0;
-    public int wastedSpace;
+    public long width = 0;
+    public long area;
+    public long filledSpace = 0;
+    public long wastedSpace;
     public double wastePercentage;
     public boolean hasOverlap = false;
     public boolean exceedsHeight = false;
@@ -34,7 +34,6 @@ public class Result {
 
     public void read(Reader r){
         reader = r;
-
         //Container Height
         reader.skipWord(2);
         String containerHeightString = reader.next();

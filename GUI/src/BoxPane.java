@@ -121,27 +121,29 @@ public class BoxPane extends JPanel {
         g.drawRect(0,bottom-bHeight,bWidth,bHeight);
 
         int i = 0;
-        for(double x = 0; x < bWidth; x+=scale){
+        if(result.width<1000) {
+            for (double x = 0; x < bWidth; x += scale) {
 
-            if(i%5==0){
-                g.setColor(Color.WHITE);
-                g.fillRect((int)x-1,bottom-bHeight,1,bHeight);
-            }else{
-                g.setColor(Color.GRAY);
-                g.drawLine((int)x,bottom,(int)x,bottom-bHeight);
+                if (i % 5 == 0) {
+                    g.setColor(Color.WHITE);
+                    g.fillRect((int) x - 1, bottom - bHeight, 1, bHeight);
+                } else {
+                    g.setColor(Color.GRAY);
+                    g.drawLine((int) x, bottom, (int) x, bottom - bHeight);
+                }
+                i++;
             }
-            i++;
-        }
-        i = 0;
-        for(double y = bottom; y > bottom-bHeight; y-=scale){
-            if(i%5==0){
-                g.setColor(Color.WHITE);
-                g.fillRect(0,(int)y-1,bWidth,1);
-            }else{
-                g.setColor(Color.GRAY);
-                g.drawLine(0,(int)y,bWidth,(int)y);
+            i = 0;
+            for (double y = bottom; y > bottom - bHeight; y -= scale) {
+                if (i % 5 == 0) {
+                    g.setColor(Color.WHITE);
+                    g.fillRect(0, (int) y - 1, bWidth, 1);
+                } else {
+                    g.setColor(Color.GRAY);
+                    g.drawLine(0, (int) y, bWidth, (int) y);
+                }
+                i++;
             }
-            i++;
         }
 
         drawRectangles(g);
@@ -181,7 +183,7 @@ public class BoxPane extends JPanel {
         }
     }
 
-    public int scale(int value){
+    public int scale(long value){
         return (int)(value*scale);
     }
 

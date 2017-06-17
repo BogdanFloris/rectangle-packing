@@ -1,5 +1,5 @@
-test file: src/tests/canvas_testcases/03_03_h12_ry.txt
+test file: src/tests/canvas_testcases/10000_04_h1315_ry.txt
 rotations: allowed
 height: fixed
-algorithm: Optimal
-running time: 1.91734794 seconds
+algorithm: Binary Tree Packing
+running time: 1.18915613 seconds

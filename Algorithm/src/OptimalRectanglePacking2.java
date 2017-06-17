@@ -18,6 +18,7 @@ public class OptimalRectanglePacking2 implements Solver {
     // controls what pruning methods are used, for experimentation purposes
     private static boolean pruneWastedSpace = true;
     private static boolean pruneDominance = false;
+    private static boolean pruneDominanceEmptySpace = true;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 
@@ -246,6 +247,7 @@ public class OptimalRectanglePacking2 implements Solver {
             // call the containment algorithm (!!! if solution is found, the solution is stored in sortedRects)
             feasible = containmentAlgorithm(width, height, sortedRects);
 
+
             // if the bounding box is feasible, store the new solution as the optimal solution
             // (it is optimal because we only test bounding boxes with a smaller area)
             if (feasible) {
@@ -403,6 +405,23 @@ public class OptimalRectanglePacking2 implements Solver {
         // Prune the current subtree if the partial solution cannot be
         // extended to a complete solution
 
+        // Not working right now.
+//        if (iteration > 0) {
+//            // prune based on narrow empty strips to the top
+//            if (pruneDominance) {
+//                if (canPruneDominanceTop(rectangles[iteration - 1], width, height)) {
+//                    return false;
+//                }
+//            }
+//
+//            // prune based on narrow empty strips to the right and top
+//            if (pruneDominance) {
+//                if (canPruneDominanceRight(rectangles[iteration - 1], width, height)) {
+//                    return false;
+//                }
+//            }
+//        }
+
         // prune based on lower bound on wasted space
         if (pruneWastedSpace) {
             if (canPruneWastedSpace(width, height, rectangles, emptyRowHistogram, emptyColumnHistogram, iteration)) {
@@ -410,6 +429,23 @@ public class OptimalRectanglePacking2 implements Solver {
                     System.out.println("pruned by wasted space");
                 }
                 return false;
+            }
+        }
+
+        if (iteration > 0) {
+            if (pruneDominanceEmptySpace) {
+                if (canPruneDominanceEmptySpaceBottom(rectangles[iteration - 1], width, height)) {
+                    if (showEachPlacement) {
+                        System.out.println("pruned by dominance empty space BOTTOM");
+                    }
+                    return false;
+                }
+                if (canPruneDominanceEmptySpaceLeft(rectangles[iteration - 1], width, height)) {
+                    if (showEachPlacement) {
+                        System.out.println("pruned by dominance empty space LEFT");
+                    }
+                    return false;
+                }
             }
         }
 
@@ -438,6 +474,7 @@ public class OptimalRectanglePacking2 implements Solver {
                     placeRectangle(x, y, rectangles[iteration], width, height,
                             pruneWastedSpace || pruneDominance,
                             newEmptyRowHistogram, newEmptyColumnHistogram);
+
 
                     // call for next iteration
                     if (containmentAlgorithm(width, height, rectangles, iteration + 1,
@@ -468,6 +505,147 @@ public class OptimalRectanglePacking2 implements Solver {
         return false;
     }
 
+    private boolean canPruneDominanceEmptySpaceBottom(Rectangle rectangle, int width, int height) {
+        // cant prune if already at the bottom
+        if (rectangle.y == 0) {
+            return false;
+        }
+        // check the bottom of the rectangle.
+        for (int j = rectangle.y; j > 0; j--) {
+            int count = 0;
+            // if there is an empty space to the sides of the empty space return false
+
+            if (rectangle.x == 0 && (rectangle.x + rectangle.width) == width) {
+            } else if (rectangle.x == 0) {
+                if (placementMatrix[rectangle.x + rectangle.width][j] == -1) {
+                    return false;
+                }
+            } else if (rectangle.x + rectangle.width == width) {
+                if (placementMatrix[rectangle.x - 1][j] == -1) {
+                    return false;
+                }
+            } else {
+                if (placementMatrix[rectangle.x - 1][j] == -1 ||
+                        placementMatrix[rectangle.x + rectangle.width][j] == -1) {
+                    return false;
+                }
+            }
+
+            for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++) {
+                if (placementMatrix[i][j] > 0) {
+                    count++;
+                }
+            }
+            // we have hit a solid wall
+            if (count == rectangle.width) {
+                return true;
+            }
+            if (count > 0 && count < rectangle.width) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean canPruneDominanceEmptySpaceLeft(Rectangle rectangle, int width, int height) {
+        // cant prune if already at the left
+        if (rectangle.x == 0) {
+            return false;
+        }
+        // check the left of the rectangle.
+        for (int i = rectangle.x; i > 0; i--) {
+            // if there is an empty space to the sides of the empty space return false
+//            System.out.println("Rectangle.y: " + rectangle.y);
+//            System.out.println("Rectangle.height: " + rectangle.height);
+//            System.out.println("height: " + height);
+
+            if (rectangle.y == 0 && (rectangle.y + rectangle.height) == height) {
+            } else if (rectangle.y == 0) {
+                if (placementMatrix[i][rectangle.y + rectangle.height] == -1) {
+                    return false;
+                }
+            } else if (rectangle.y + rectangle.height == height) {
+                if (placementMatrix[i][rectangle.y - 1] == -1) {
+                    return false;
+                }
+            } else {
+                if (placementMatrix[i][rectangle.y - 1] == -1 ||
+                        placementMatrix[i][rectangle.y + rectangle.height] == -1) {
+                    return false;
+                }
+            }
+            int count = 0;
+            for (int j = rectangle.y; j < rectangle.y + rectangle.height; j++) {
+                if (placementMatrix[i][j] > 0) {
+                    count++;
+                }
+            }
+            // we have hit a solid wall
+            if (count == rectangle.height) {
+                return true;
+            }
+            if (count > 0 && count < rectangle.height) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // This code currently does not work.
+    private boolean canPruneDominanceTop(Rectangle rectangle, int width, int height) {
+        // The rectangle is at the bottom of the bounding box.
+        if (rectangle.y == 0) {
+            return false;
+        }
+        // the rectangle is at the top of the bounding box
+        if ((rectangle.y + rectangle.height) >= height) {
+            return false;
+        }
+
+        // check the top of the rectangle, if there is an empty strip we can prune if there is no solid wall to the bottom
+        for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++) {
+            if (placementMatrix[i][rectangle.y + rectangle.height] >= 0) {
+                return false;
+            }
+        }
+
+        // now the check if there is no solid wall to the left
+        for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++) {
+            if (placementMatrix[i][rectangle.y - 1] < 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // This code currently does not work.
+    private boolean canPruneDominanceRight(Rectangle rectangle, int width, int height) {
+        // The rectangle is at the left of the bounding box.
+        if (rectangle.x == 0) {
+            return false;
+        }
+
+        // the rectangle is at the right of the bounding box
+        if ((rectangle.x + rectangle.width) >= width) {
+            return false;
+        }
+
+        // check the right of the rectangle, if there is an empty strip we can prune if there is no solid wall to the bottom
+        for (int i = rectangle.y; i < rectangle.y + rectangle.height; i++) {
+            if (placementMatrix[rectangle.x + rectangle.width][i] >= 0) {
+                return false;
+            }
+        }
+        // now the check if there is no solid wall to the left
+        for (int i = rectangle.y; i < rectangle.y + rectangle.height; i++) {
+            if (placementMatrix[rectangle.x + rectangle.width][i] < 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private boolean canPruneWastedSpace(int width, int height, Rectangle[] rectangles,
                                         long[] emptyRowHistogram, long[] emptyColumnHistogram, int iteration) {

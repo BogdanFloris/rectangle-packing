@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 // TODO Maximal Rectangles ALGORITHM fails on 10_03_hf_ry.txt
 public class PackingSolver {
     /** CONSTANTS */
-    private static final String IN_STD_FILE = "src/tests/unoriented double-perimeter_55214.in";         // standard stream input
+    private static final String IN_STD_FILE = "src/tests/test1.in";         // standard stream input
     private static final String OUT_STD_FILE = "src/tests/out.out";         // standard stream output
     private static final String OUT_DEBUG_FILE = "src/tests/debug.out";     // error    stream output
 
@@ -125,30 +125,37 @@ public class PackingSolver {
             programStartTime = System.currentTimeMillis();
 
             result = solver.solver(rectangles);
+            long areaOptimal = ((OptimalRectanglePacking2) solver).GetAreaSmallestBoundingBox();
 
             if (algorithmInterrupted) {
                 debug.println("INTERRUPTED");
 
                 solver = new MaximalRectanglesAlgorithm(rotations, height);
-                Rectangle[] result1 = solver.solver(rectangles);
-                int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
-                        ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+                Rectangle[] resultMaxRect = solver.solver(rectangles);
+                long areaMaxRect = (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                        (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
 
                 solver = new BinaryTreeBinPacking(rotations, height);
-                Rectangle[] result2 = solver.solver(rectangles);
-                int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
-                        ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+                Rectangle[] resultBinTree = solver.solver(rectangles);
+                long areaBinTree = (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                        (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
 
-                if (area1 < area2) {
+
+                if (areaMaxRect < areaOptimal && areaMaxRect < areaBinTree) {
                     debug.println("algorithm: Maximal Rectangles Algorithm");
                     debug.flush();
 
-                    result = result1;
-                } else {
+                    result = resultMaxRect;
+                } else if (areaBinTree < areaOptimal && areaBinTree < areaMaxRect){
                     debug.println("algorithm: Binary Tree Packing");
                     debug.flush();
 
-                    result = result2;
+                    result = resultBinTree;
+                }  else {
+                    // else, the bounding box found by the optimal rectangle packer
+                    // is still better, despite not being optimal
+                    debug.println("algorithm: (not so) Optimal");
+                    debug.flush();
                 }
 
             } else {

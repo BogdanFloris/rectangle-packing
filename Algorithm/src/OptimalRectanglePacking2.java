@@ -10,19 +10,19 @@ import java.util.HashMap;
 public class OptimalRectanglePacking2 implements Solver {
 
     // prints out a.o. the placement matrix, for debugging purposes
-    private static boolean showEachPlacement = false;
-    private static boolean showFeasibleSolutions = false;
-    private static boolean showGreedy = false;
+    private final boolean showEachPlacement = false;
+    private final boolean showFeasibleSolutions = false;
+    private final boolean showGreedy = false;
 
     // controls what pruning methods are used, for experimentation purposes
-    private static boolean pruneWastedSpace = true;
-    private static boolean pruneDominancePerfectRectangles = true;
-    private static boolean simplifyWithGCD = true;
+    private final boolean pruneWastedSpace = true;
+    private final boolean pruneDominancePerfectRectangles = true;
+    private final boolean simplifyWithGCD = true;
 
-    private static boolean anytime;                       // true if anytime; false if iterative
+    private final boolean anytime;                       // true if anytime; false if iterative
 
     // dependent on current problem
-    private static boolean rotationsAllowed;
+    private final boolean rotationsAllowed;
     private int fixedHeight;                        // 0 if height is free; value of the fixed height otherwise
 
     // dependent on given set of rectangles
@@ -83,6 +83,11 @@ public class OptimalRectanglePacking2 implements Solver {
      *          [2][2] of the placement matrix
      *
      */
+
+    public long GetAreaSmallestBoundingBox() {
+        return (long) globalOptimum.width * (long) globalOptimum.height;
+    }
+
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
 
@@ -284,7 +289,7 @@ public class OptimalRectanglePacking2 implements Solver {
         // all possible bounding boxes have been tested
 
         // if necessary, restore fixedHeight to its previous value
-            desimplifyProblem();
+        desimplifyProblem();
     }
 
     /**

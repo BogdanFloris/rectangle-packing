@@ -5,6 +5,6 @@ number of rectangles: 3
 8 9
 11 3
 placement of rectangles
-8 3
-0 3
+8 0
 0 0
+0 9

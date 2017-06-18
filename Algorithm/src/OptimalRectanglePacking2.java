@@ -1,34 +1,29 @@
-import org.w3c.dom.css.Rect;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.OptionalInt;
 
 /**
  * Improvement on previous optimal rectangle packer, created as a separate class as not to
  * destroy code previous class.
- *
  */
 
 public class OptimalRectanglePacking2 implements Solver {
 
-
     // prints out a.o. the placement matrix, for debugging purposes
-    private static boolean showEachPlacement = false;
-    private static boolean showFeasibleSolutions = false;
-    private static boolean showGreedy = false;
+    private final boolean showEachPlacement = false;
+    private final boolean showFeasibleSolutions = false;
+    private final boolean showGreedy = false;
 
     // controls what pruning methods are used, for experimentation purposes
-    private static boolean pruneWastedSpace = true;
-    private static boolean pruneDominance = false;
-    private static boolean pruneDominanceEmptySpace = false;
+    private final boolean pruneWastedSpace = true;
+    private final boolean pruneDominancePerfectRectangles = true;
+    private final boolean simplifyWithGCD = true;
 
-    private static boolean anytime;                       // true if anytime; false if iterative
+    private final boolean anytime;                       // true if anytime; false if iterative
 
     // dependent on current problem
-    private static boolean rotationsAllowed;
-    private static int fixedHeight;                        // 0 if height is free; value of the fixed height otherwise
+    private final boolean rotationsAllowed;
+    private int fixedHeight;                        // 0 if height is free; value of the fixed height otherwise
 
     // dependent on given set of rectangles
     private long totalRectArea;      // total area of all rectangles combined. Computed at the start of the solve method
@@ -50,6 +45,9 @@ public class OptimalRectanglePacking2 implements Solver {
 
     private Rectangle globalOptimum;        // best bounding box found up to this point
     private Rectangle[] globalSolution;     // best placement of rectangles found up to this point
+
+    private int gcdWidth;
+    private int gcdHeight;
 
 
     public OptimalRectanglePacking2(boolean rotations, int height) {
@@ -85,6 +83,11 @@ public class OptimalRectanglePacking2 implements Solver {
      *          [2][2] of the placement matrix
      *
      */
+
+    public long GetAreaSmallestBoundingBox() {
+        return (long) globalOptimum.width * (long) globalOptimum.height;
+    }
+
     @Override
     public Rectangle[] solver(Rectangle[] rectangles) {
 
@@ -97,7 +100,7 @@ public class OptimalRectanglePacking2 implements Solver {
         globalOptimum = (fixedHeight == 0) ?
                 new Rectangle(Integer.MAX_VALUE, Integer.MAX_VALUE, -1) :
                 new Rectangle(Integer.MAX_VALUE, fixedHeight, -1);
-        globalSolution = null;
+        globalSolution = rectangles;    // set the original rectangles as the best solution to start with
 
         if (anytime) {
             if (rotationsAllowed) {
@@ -153,6 +156,10 @@ public class OptimalRectanglePacking2 implements Solver {
      */
     private void anytimeSolution(Rectangle[] rectangles) {
 
+        // use gcd's to simplify problem
+        // NOTE, this can alter fixedHeight if the height is fixed!!!
+        simplifyProblem(rectangles);
+
         // variables to store the size of the bounding box being tested currently
         int height;
         int width;
@@ -170,11 +177,13 @@ public class OptimalRectanglePacking2 implements Solver {
         Pair<Rectangle[], Rectangle> greedySolution = getGreedySolution(rectangles);
         Rectangle localOptimum = greedySolution.second;
         // store localOptimum as globalOptimum if it is better
-        if ((long) localOptimum.width * (long) localOptimum.height < (long) globalOptimum.width * (long) globalOptimum.height) {
-            globalOptimum.width = localOptimum.width;
-            globalOptimum.height = localOptimum.height;
+        Rectangle desimplifiedLocalOpt = desimplifiedRectangle(localOptimum);
+        if ((long) desimplifiedLocalOpt.width * (long) desimplifiedLocalOpt.height
+                < (long) globalOptimum.width * (long) globalOptimum.height) {
+            globalOptimum.width = desimplifiedLocalOpt.width;
+            globalOptimum.height = desimplifiedLocalOpt.height;
             // store placement rectangles
-            globalSolution = copyRectangles(greedySolution.first);
+            globalSolution = desimplifiedRectangles(greedySolution.first);
         }
         // store current bounding box size
         width = localOptimum.width;
@@ -212,7 +221,9 @@ public class OptimalRectanglePacking2 implements Solver {
             // change dimensions bounding box
             if (feasible) {
                 // decrease width/height until area is smaller than the area of the optimal bounding box
-                while ((long) width * (long) height >= (long) globalOptimum.width * (long) globalOptimum.height) {
+
+                while ((long) desimplifiedWidth(width) * (long) desimplifiedHeight(height)
+                        >= (long) globalOptimum.width * (long) globalOptimum.height) {
                     // shrink bounding box
                     if (searchWideToTall) { width--; } else { height--; }
                 }
@@ -225,7 +236,8 @@ public class OptimalRectanglePacking2 implements Solver {
                     // enlarge bounding box
                     if (searchWideToTall) { height++; } else { width++; }
                     // decrease width/height until area is smaller than the area of the optimal bounding box
-                    while ((long) width * (long) height >= (long) globalOptimum.width * (long) globalOptimum.height) {
+                    while ((long) desimplifiedWidth(width) * (long) desimplifiedHeight(height)
+                            >= (long) globalOptimum.width * (long) globalOptimum.height) {
                         // shrink bounding box
                         if (searchWideToTall) { width--; } else { height--; }
                     }
@@ -259,13 +271,14 @@ public class OptimalRectanglePacking2 implements Solver {
             // (it is optimal because we only test bounding boxes with a smaller area)
             if (feasible) {
                 // store in global optimum, which is consistent, as we only check smaller bounding boxes
-                globalOptimum.width = width;
-                globalOptimum.height = height;
+                globalOptimum.width = desimplifiedWidth(width);
+                globalOptimum.height = desimplifiedHeight(height);
 
                 // store solution (unsorted)
                 for (int i = 0; i < sortedRects.length; i++) {
-                    globalSolution[sortedRects[i].index] = copyRectangle(sortedRects[i]);
+                    globalSolution[sortedRects[i].index] = desimplifiedRectangle(sortedRects[i]);
                 }
+
 
                 if (showFeasibleSolutions) {
                     printPlacementMatrix(placementMatrix);
@@ -274,6 +287,9 @@ public class OptimalRectanglePacking2 implements Solver {
         }
 
         // all possible bounding boxes have been tested
+
+        // if necessary, restore fixedHeight to its previous value
+        desimplifyProblem();
     }
 
     /**
@@ -430,7 +446,7 @@ public class OptimalRectanglePacking2 implements Solver {
         // set up stuff for the containment algorithm
 
         // generate new matrices
-        generateNewMatrices(width, height, pruneWastedSpace || pruneDominance);
+        generateNewMatrices(width, height, pruneWastedSpace || pruneDominancePerfectRectangles);
 
         // create new histograms empty space (used for pruning wasted space)
         long[] emptyRowHistogram;
@@ -523,17 +539,18 @@ public class OptimalRectanglePacking2 implements Solver {
             }
         }
 
-        if (iteration > 0) {
-            if (pruneDominanceEmptySpace) {
-                if (canPruneDominanceEmptySpaceBottom(rectangles[iteration - 1], width, height)) {
+        // prune based on dominance conditions with perfect rectangles of empty space
+        if (pruneDominancePerfectRectangles) {
+            if (iteration > 0) {
+                if (canPruneDominancePerfectRectanglesBottom(rectangles[iteration - 1], width)) {
                     if (showEachPlacement) {
-                        System.out.println("pruned by dominance empty space BOTTOM");
+                        System.out.println("pruned by dominance perfect rectangles BOTTOM");
                     }
                     return false;
                 }
-                if (canPruneDominanceEmptySpaceLeft(rectangles[iteration - 1], width, height)) {
+                if (canPruneDominancePerfectRectanglesLeft(rectangles[iteration - 1], height)) {
                     if (showEachPlacement) {
-                        System.out.println("pruned by dominance empty space LEFT");
+                        System.out.println("pruned by dominance perfect rectangles LEFT");
                     }
                     return false;
                 }
@@ -563,7 +580,7 @@ public class OptimalRectanglePacking2 implements Solver {
                     long[] newEmptyColumnHistogram = copyHistogram(emptyColumnHistogram);
                     // place the rectangle
                     placeRectangle(x, y, rectangles[iteration], width, height,
-                            pruneWastedSpace || pruneDominance,
+                            pruneWastedSpace || pruneDominancePerfectRectangles,
                             newEmptyRowHistogram, newEmptyColumnHistogram);
 
 
@@ -577,7 +594,7 @@ public class OptimalRectanglePacking2 implements Solver {
                         // if this partial solution cannot be extended to a complete iteration,
                         // clear the rectangle and continue the loop to try different positions.
                         clearRectangle(x, y, rectangles[iteration], width, height,
-                                pruneWastedSpace || pruneDominance);
+                                pruneWastedSpace || pruneDominancePerfectRectangles);
                     }
                 }
             }
@@ -596,92 +613,134 @@ public class OptimalRectanglePacking2 implements Solver {
         return false;
     }
 
-    private boolean canPruneDominanceEmptySpaceBottom(Rectangle rectangle, int width, int height) {
-        // cant prune if already at the bottom
+    private boolean canPruneDominancePerfectRectanglesBottom(Rectangle rectangle, int width) {
+        // cannot prune if already at the bottom
         if (rectangle.y == 0) {
             return false;
         }
-        // check the bottom of the rectangle.
-        for (int j = rectangle.y; j > 0; j--) {
-            int count = 0;
-            // if there is an empty space to the sides of the empty space return false
 
+        // check the bottom of the rectangle, row by row
+        for (int j = rectangle.y - 1; j >= 0; j--) {
+
+            // if there is an empty space to the sides of the empty space return false
+            // check sides
             if (rectangle.x == 0 && (rectangle.x + rectangle.width) == width) {
+                // on the left and on the right the rectangle is squished
+                // tight between the edges of the bounding box
             } else if (rectangle.x == 0) {
+                // on the left the rectangle is pushed against the side of the bounding box
+                // check if the right side is filled by another rectangle
                 if (placementMatrix[rectangle.x + rectangle.width][j] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else if (rectangle.x + rectangle.width == width) {
+                // on the right the rectangle is pushed against the side of the bounding box
+                // check if the left side is filled by another rectangle
                 if (placementMatrix[rectangle.x - 1][j] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else {
+                // check if both sides are filled by other rectangles
                 if (placementMatrix[rectangle.x - 1][j] == -1 ||
                         placementMatrix[rectangle.x + rectangle.width][j] == -1) {
+                    return false;   // not filled, we cannot prune
+                }
+            }
+
+            // check how much cells under the rectangle in this row are filled
+            if (placementMatrix[rectangle.x][j] == -1 ) {
+                if (emptyRowMatrix[rectangle.x][j] == rectangle.width) {
+                    // the entire row is empty, we can continue the loop
+                    continue;
+                } else {
+                    // the first cell is empty, but not all are empty
+                    // thus no solid wall is present, we cannot prune
                     return false;
                 }
             }
 
-            for (int i = rectangle.x; i < rectangle.x + rectangle.width; i++) {
-                if (placementMatrix[i][j] > 0) {
-                    count++;
+            // first cell is filled, we now check if the rest of the cells are as well
+            for (int i = rectangle.x + 1; i < rectangle.x + rectangle.width; i++) {
+                if (placementMatrix[i][j] == -1) {
+                    return false;                   // a gap, we cannot prune
                 }
             }
-            // we have hit a solid wall
-            if (count == rectangle.width) {
-                return true;
+            // hit a solid wall
+            if (j == rectangle.y - 1) {
+                return false;   // the rectangle is placed immediately above a solid wall
+            } else {
+                return true;    // there is a perfect square of empty space, we can prune
             }
-            if (count > 0 && count < rectangle.width) {
-                return false;
-            }
+
         }
-        return true;
+        return true;    // hit the bottom of the bounding box
     }
 
-    private boolean canPruneDominanceEmptySpaceLeft(Rectangle rectangle, int width, int height) {
-        // cant prune if already at the left
+
+    private boolean canPruneDominancePerfectRectanglesLeft(Rectangle rectangle, int height) {
+        // cannot prune if already at the left
         if (rectangle.x == 0) {
             return false;
         }
-        // check the left of the rectangle.
-        for (int i = rectangle.x; i > 0; i--) {
-            // if there is an empty space to the sides of the empty space return false
-//            System.out.println("Rectangle.y: " + rectangle.y);
-//            System.out.println("Rectangle.height: " + rectangle.height);
-//            System.out.println("height: " + height);
 
+        // check the left of the rectangle.
+        for (int i = rectangle.x - 1; i >= 0; i--) {
+            // if there is an empty space to the sides of the empty space return false
+            // check sides
             if (rectangle.y == 0 && (rectangle.y + rectangle.height) == height) {
+                // on the bottom and on the top the rectangle is squished
+                // tight between the edges of the bounding box
             } else if (rectangle.y == 0) {
+                // on the bottom the rectangle is pushed against the side of the bounding box
+                // check if the top is filled by another rectangle
                 if (placementMatrix[i][rectangle.y + rectangle.height] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else if (rectangle.y + rectangle.height == height) {
+                // on the top the rectangle is pushed against the side of the bounding box
+                // check if the bottom is filled by another rectangle
                 if (placementMatrix[i][rectangle.y - 1] == -1) {
-                    return false;
+                    return false;   // not filled, we cannot prune
                 }
             } else {
+                // check if both sides are filled by other rectangles
                 if (placementMatrix[i][rectangle.y - 1] == -1 ||
                         placementMatrix[i][rectangle.y + rectangle.height] == -1) {
+                    return false;   // not filled, we cannot prune
+                }
+            }
+
+            // check how much cells left of the rectangle in this column are filled
+            if (placementMatrix[i][rectangle.y] == -1 ) {
+                if (emptyColumnMatrix[i][rectangle.y] == rectangle.height) {
+                    // the entire column is empty, we can continue the loop
+                    continue;
+                } else {
+                    // the first cell is empty, but not all are empty
+                    // thus no solid wall is present, we cannot prune
                     return false;
                 }
             }
-            int count = 0;
-            for (int j = rectangle.y; j < rectangle.y + rectangle.height; j++) {
-                if (placementMatrix[i][j] > 0) {
-                    count++;
+
+            // first cell is filled, we now check if the rest of the cells are as well
+            for (int j = rectangle.y + 1; j < rectangle.y + rectangle.height; j++) {
+                if (placementMatrix[i][j] == -1) {
+                    return false;                   // a gap, we cannot prune
                 }
             }
-            // we have hit a solid wall
-            if (count == rectangle.height) {
-                return true;
+            // hit a solid wall
+            if (i == rectangle.x - 1) {
+                return false;   // the rectangle is placed immediately next to a solid wall
+            } else {
+                return true;    // there is a perfect square of empty space, we can prune
             }
-            if (count > 0 && count < rectangle.height) {
-                return false;
-            }
+
         }
-        return true;
+        return true;    // hit the left of the bounding box
     }
 
+    // TODO: This pruning function is only applicable for
+    // TODO: dominance pruning with narrow strips of empty space
     // This code currently does not work.
     private boolean canPruneDominanceTop(Rectangle rectangle, int width, int height) {
         // The rectangle is at the bottom of the bounding box.
@@ -710,6 +769,8 @@ public class OptimalRectanglePacking2 implements Solver {
         return false;
     }
 
+    // TODO: This pruning function is only applicable for
+    // TODO: dominance pruning with narrow strips of empty space
     // This code currently does not work.
     private boolean canPruneDominanceRight(Rectangle rectangle, int width, int height) {
         // The rectangle is at the left of the bounding box.
@@ -1002,9 +1063,7 @@ public class OptimalRectanglePacking2 implements Solver {
         }
     }
 
-    private Pair<Rectangle[], Rectangle> iterativeSolution(Rectangle[] rectangles) {
-        return null;
-    }
+    private void iterativeSolution(Rectangle[] rectangles) { /** do nothing */  }
 
     /**
      * Create a copy of the supplied array of rectangles.
@@ -1074,6 +1133,138 @@ public class OptimalRectanglePacking2 implements Solver {
             System.out.print(histogram[i] + ",");
         }
         System.out.println(histogram[histogram.length - 1] + ")");
+    }
+
+    // simplifies rectangle and fixedHeight
+    private void simplifyProblem(Rectangle[] rectangles) {
+        if (simplifyWithGCD) {
+            int[] widths = new int[rectangles.length];
+            int[] heights = new int[rectangles.length];
+            for (int i = 0; i < rectangles.length; i++) {
+                widths[i] = rectangles[i].width;
+                heights[i] = rectangles[i].height;
+            }
+
+            // calculate greatest common denominators per dimension
+            gcdWidth = gcd(widths);
+            gcdHeight = (fixedHeight == 0) ? gcd(heights) : gcd(heights, fixedHeight);
+
+            // divide dimensions by gcd
+            if (gcdWidth != 1) {    // if gcd == 1, there is nothing to change
+                for (int i = 0; i < rectangles.length; i++) {
+                    rectangles[i].width /= gcdWidth;
+                }
+                totalRectArea /= gcdWidth;
+            }
+            if (gcdHeight != 1) {    // if gcd == 1, there is nothing to change
+                for (int i = 0; i < rectangles.length; i++) {
+                    rectangles[i].height /= gcdHeight;
+                }
+                if (fixedHeight > 0) {
+                    fixedHeight /= gcdHeight;
+                }
+                totalRectArea /= gcdHeight;
+            }
+        } else {
+            gcdWidth = 1;
+            gcdHeight = 1;
+        }
+    }
+
+    // returns a copy of the boudning box, but desimplified
+    private Rectangle desimplifiedRectangle (Rectangle boundingBox) {
+        Rectangle copy = copyRectangle(boundingBox);
+        if (gcdWidth != 1) {
+            copy.width *= gcdWidth;
+            copy.x *= gcdWidth;
+        }
+        if (gcdHeight != 1) {
+            copy.height *= gcdHeight;
+            copy.y *= gcdHeight;
+        }
+        return copy;
+    }
+
+    // returns a copy of the solution, but desimplified
+    private Rectangle[] desimplifiedRectangles (Rectangle[] rectangles) {
+        Rectangle[] copy = copyRectangles(rectangles);
+        if (gcdWidth != 1) {
+            for (int i = 0; i < copy.length; i++) {
+                copy[i].width *= gcdWidth;
+                copy[i].x *= gcdWidth;
+            }
+        }
+        if (gcdHeight != 1) {
+            for (int i = 0; i < copy.length; i++) {
+                copy[i].height *= gcdHeight;
+                copy[i].y *= gcdHeight;
+            }
+        }
+        return copy;
+        // TODO
+    }
+
+    private int desimplifiedWidth(int width) {
+        if (gcdWidth != 1) {
+            return width * gcdWidth;
+        } else {
+            return width;
+        }
+    }
+
+    private int desimplifiedHeight(int height) {
+        if (gcdHeight != 1) {
+            return height * gcdHeight;
+        } else {
+            return height;
+        }
+    }
+
+    private void desimplifyProblem () {
+        if (gcdWidth != 1) {
+            totalRectArea *= gcdWidth;
+        }
+        if (gcdHeight != 1) {
+            if (fixedHeight > 0) { fixedHeight *= gcdHeight; }
+            totalRectArea *= gcdHeight;
+        }
+    }
+
+
+
+    // let numbers contain at least one number
+    private int gcd(int[] numbers, int a) {
+        int gcd = gcd(a, numbers[0]);
+        for (int i = 1; i < numbers.length; i++) {
+            if (gcd == 1) { break; }
+            gcd = gcd(gcd, numbers[i]);
+        }
+        return gcd;
+    }
+
+    // let numbers contain at least one number
+    private int gcd(int[] numbers) {
+        if (numbers.length == 1) {
+            return numbers[0];
+        } else {
+            int gcd = gcd(numbers[0], numbers[1]);
+            for (int i = 2; i < numbers.length; i++) {
+                if (gcd == 1) { break; }
+                gcd = gcd(gcd, numbers[i]);
+            }
+            return gcd;
+        }
+    }
+
+    // let a, b be positive integers
+    private int gcd(int a, int b) {
+        int c;
+        while (b > 0) {
+            c = a;
+            a = b;
+            b = c % b;
+        }
+        return a;
     }
 
     private class Pair<T, U> {

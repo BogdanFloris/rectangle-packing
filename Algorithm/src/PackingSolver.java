@@ -101,23 +101,81 @@ public class PackingSolver {
         algorithmInterrupted = false;
 
         if (n == 3) {
-            usesTimer = false;  // TODO:     Jelle: perhaps we always want to use the timer,
-                                // TODO:     just to be sure that a solution is produced
+            usesTimer = true;
 
             solver = new OptimalRectanglePacking2(rotations, height);
+
+            programStartTime = System.currentTimeMillis();
+
             result = solver.solver(rectangles);
 
-            debug.println("algorithm: Optimal");
-            debug.flush();
+            if (algorithmInterrupted) {
+                debug.println("INTERRUPTED");
+
+                solver = new MaximalRectanglesAlgorithm(rotations, height);
+                Rectangle[] resultMaxRect = solver.solver(rectangles);
+                long areaMaxRect = (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                        (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+                solver = new BinaryTreeBinPacking(rotations, height);
+                Rectangle[] resultBinTree = solver.solver(rectangles);
+                long areaBinTree = (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                        (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+
+                if (areaMaxRect < areaBinTree) {
+                    debug.println("algorithm: Maximal Rectangles Algorithm");
+                    debug.flush();
+
+                    result = resultMaxRect;
+                } else {
+                    debug.println("algorithm: Binary Tree Packing");
+                    debug.flush();
+
+                    result = resultBinTree;
+                }
+            } else {
+                debug.println("algorithm: Optimal");
+                debug.flush();
+            }
         } else if (n == 5) {
             usesTimer = true;
 
             solver = new OptimalRectanglePacking2(rotations, height);
+
+            programStartTime = System.currentTimeMillis();
+
             result = solver.solver(rectangles);
 
+            if (algorithmInterrupted) {
+                debug.println("INTERRUPTED");
 
-            debug.println("algorithm: Optimal");
-            debug.flush();
+                solver = new MaximalRectanglesAlgorithm(rotations, height);
+                Rectangle[] resultMaxRect = solver.solver(rectangles);
+                long areaMaxRect = (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                        (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+
+                solver = new BinaryTreeBinPacking(rotations, height);
+                Rectangle[] resultBinTree = solver.solver(rectangles);
+                long areaBinTree = (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                        (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+
+
+                if (areaMaxRect < areaBinTree) {
+                    debug.println("algorithm: Maximal Rectangles Algorithm");
+                    debug.flush();
+
+                    result = resultMaxRect;
+                } else if (areaBinTree < areaMaxRect){
+                    debug.println("algorithm: Binary Tree Packing");
+                    debug.flush();
+
+                    result = resultBinTree;
+                }
+            } else {
+                debug.println("algorithm: Optimal");
+                debug.flush();
+            }
         } else if (n == 10) {
             usesTimer = true;
 
@@ -131,27 +189,27 @@ public class PackingSolver {
                 debug.println("INTERRUPTED");
 
                 solver = new MaximalRectanglesAlgorithm(rotations, height);
-                Rectangle[] result1 = solver.solver(rectangles);
-                int area1 = ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
-                        ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
+                Rectangle[] resultMaxRect = solver.solver(rectangles);
+                long areaMaxRect = (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().width *
+                        (long) ((MaximalRectanglesAlgorithm) solver).getEnclosingRectangle().height;
 
                 solver = new BinaryTreeBinPacking(rotations, height);
-                Rectangle[] result2 = solver.solver(rectangles);
-                int area2 = ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
-                        ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
+                Rectangle[] resultBinTree = solver.solver(rectangles);
+                long areaBinTree = (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().width *
+                        (long) ((BinaryTreeBinPacking) solver).getEnclosingRectangle().height;
 
-                if (area1 < area2) {
+
+                if (areaMaxRect < areaBinTree) {
                     debug.println("algorithm: Maximal Rectangles Algorithm");
                     debug.flush();
 
-                    result = result1;
-                } else {
+                    result = resultMaxRect;
+                } else if (areaBinTree < areaMaxRect){
                     debug.println("algorithm: Binary Tree Packing");
                     debug.flush();
 
-                    result = result2;
+                    result = resultBinTree;
                 }
-
             } else {
                 debug.println("algorithm: Optimal");
                 debug.flush();
@@ -290,6 +348,6 @@ public class PackingSolver {
     }
 
     public static void main(String[] args) {
-        new PackingSolver().run();
+        new PackingSolver().runIO();
     }
 }

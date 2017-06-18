@@ -22,7 +22,7 @@ public class OptimalRectanglePacking2 implements Solver {
     // controls what pruning methods are used, for experimentation purposes
     private static boolean pruneWastedSpace = true;
     private static boolean pruneDominance = false;
-    private static boolean pruneDominanceEmptySpace = true;
+    private static boolean pruneDominanceEmptySpace = false;
 
     private static boolean anytime;                       // true if anytime; false if iterative
 

@@ -499,7 +499,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // stop after 3 minutes and run a faster algorithm
         if (PackingSolver.usesTimer &&
-                (System.currentTimeMillis() - PackingSolver.programStartTime > 180000 ||
+                (System.currentTimeMillis() - PackingSolver.programStartTime > 120000 ||
                 PackingSolver.algorithmInterrupted)) {
             PackingSolver.algorithmInterrupted = true;
             return false;

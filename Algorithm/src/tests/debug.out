@@ -1,5 +1,6 @@
-test file: src/tests/canvas_testcases/10_04_hf_rn.txt
-rotations: not allowed
+test file: src/tests/canvas_testcases/10_02_h15_ry.txt
+rotations: allowed
 height: fixed
+INTERRUPTED
 algorithm: Maximal Rectangles Algorithm
-running time: 0.08038214 seconds
+running time: 180.02919027 seconds

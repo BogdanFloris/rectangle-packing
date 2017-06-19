@@ -497,9 +497,9 @@ public class OptimalRectanglePacking2 implements Solver {
     private boolean containmentAlgorithm(int width, int height, Rectangle[] rectangles,
                                          int iteration, long[] emptyRowHistogram, long[] emptyColumnHistogram) {
 
-        // stop after 4.5 minutes and run a faster algorithm
+        // stop after 3 minutes and run a faster algorithm
         if (PackingSolver.usesTimer &&
-                (System.currentTimeMillis() - PackingSolver.programStartTime > 270000 ||
+                (System.currentTimeMillis() - PackingSolver.programStartTime > 180000 ||
                 PackingSolver.algorithmInterrupted)) {
             PackingSolver.algorithmInterrupted = true;
             return false;

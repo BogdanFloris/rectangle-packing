@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 public class OptimalRectanglePacking2 implements Solver {
 
+    private static final int TIME = 60000; // 1 minute timelimit for this algorithm
     // prints out a.o. the placement matrix, for debugging purposes
     private final boolean showEachPlacement = false;
     private final boolean showFeasibleSolutions = false;
@@ -499,7 +500,7 @@ public class OptimalRectanglePacking2 implements Solver {
 
         // stop after 3 minutes and run a faster algorithm
         if (PackingSolver.usesTimer &&
-                (System.currentTimeMillis() - PackingSolver.programStartTime > 120000 ||
+                (System.currentTimeMillis() - PackingSolver.programStartTime > TIME ||
                 PackingSolver.algorithmInterrupted)) {
             PackingSolver.algorithmInterrupted = true;
             return false;
@@ -583,6 +584,12 @@ public class OptimalRectanglePacking2 implements Solver {
                             pruneWastedSpace || pruneDominancePerfectRectangles,
                             newEmptyRowHistogram, newEmptyColumnHistogram);
 
+                    if (PackingSolver.usesTimer &&
+                            (System.currentTimeMillis() - PackingSolver.programStartTime > TIME ||
+                                    PackingSolver.algorithmInterrupted)) {
+                        PackingSolver.algorithmInterrupted = true;
+                        return false;
+                    }
 
                     // call for next iteration
                     if (containmentAlgorithm(width, height, rectangles, iteration + 1,

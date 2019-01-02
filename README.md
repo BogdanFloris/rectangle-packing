@@ -7,4 +7,8 @@ Only push changes if you actually changed something and we all agreed upon it.
 
 ## Current Implementation
 
-Simple Solver: just line them up horizontally from the rectangle with the biggest area to the rectangle with the smallest area.
+Optimal Solver: for low number of rectangles
+
+Maximum Rectangle Solver: for medium number of rectangles
+
+Binary Tree Packing Solver: for large number of rectangles
